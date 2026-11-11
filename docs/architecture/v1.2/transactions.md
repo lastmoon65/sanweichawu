@@ -7,11 +7,14 @@
 - 数量：原料用量为 `DECIMAL(18,3)`，单位由 `Material.unit` 固定；禁止克和千克隐式混用。
 - 锁顺序固定：`DiningTable → DiningSession → Order → Material（materialId 升序）→ PaymentRecord → RefundRecord`。
 - 所有写请求先检查或创建幂等记录；业务记录和幂等结果必须在同一个数据库事务内提交。
-- `IdempotencyRecord` 唯一键为 `(storeId, idempotencyKey)`：
-  - 同 Key、同 `requestHash`：返回已保存结果，不重复执行。
+- `IdempotencyRecord` 唯一键为 `(storeId, endpoint, idempotencyKey)`：
+  - 同 Key、同 `requestHash`、状态 SUCCEEDED：返回已保存响应。
   - 同 Key、不同 `requestHash`：返回 409。
+  - 同 Key、PROCESSING：等待短时间后重新读取；不执行第二份业务写入。若原请求已回滚，允许按原 Key 重新领取。
   - 业务事务回滚时，PROCESSING 记录一并回滚，允许用户用同 Key 重试。
+  - 业务记录与 SUCCEEDED 响应必须在同一事务提交，禁止先提交业务再异步保存幂等结果。
 - 所有聚合金额均在事务内按事实表重新计算，不采用前端传来的余额。
+- 跨门店边界统一在事务内调用 `assertStoreOwnership(tx, storeId, { tableId, sessionId, orderId, productId, materialId, paymentId })`；SQL 触发器再做数据库兜底。
 
 ## 1. 创建堂饮订单
 
@@ -201,6 +204,81 @@ startPreparation(orderId, request):
 
 同一订单重复“开始制作”会先被幂等记录拦截；不同幂等 Key 的重复状态请求会被状态机和 version CAS 拒绝。
 
+## 5.1 配方版本 DRAFT → ACTIVE → ARCHIVED
+
+```text
+publishRecipeVersion(variantId, draftVersionId, request):
+  BEGIN
+  claimIdempotency(...)
+
+  variant = SELECT * FROM product_variants WHERE id=variantId FOR UPDATE
+
+  versions = SELECT * FROM recipe_versions
+             WHERE variantId=variantId
+             ORDER BY id
+             FOR UPDATE
+
+  draft = versions.find(id=draftVersionId)
+  assert draft exists and draft.status == DRAFT
+
+  validate draft.materials and draft.modifiers:
+      every final quantity > 0
+      material store == variant product store
+      option value belongs to this variant
+      inventoryMode == MANAGED
+
+  current = versions.find(id=variant.activeRecipeVersionId)
+  if current exists:
+      UPDATE recipe_versions SET status='ARCHIVED', archivedAt=now()
+      WHERE id=current.id AND status='ACTIVE'
+
+  UPDATE recipe_versions SET status='ACTIVE', effectiveAt=now()
+  WHERE id=draft.id AND status='DRAFT'
+
+  UPDATE product_variants
+  SET activeRecipeVersionId=draft.id
+  WHERE id=variantId
+
+  audit(...)
+  saveIdempotencyResult()
+  COMMIT
+```
+
+修改已发布配方时，应复制 ACTIVE 版本为新的 DRAFT，再修改 DRAFT。ACTIVE/ARCHIVED 配方的子表由触发器禁止更新或删除。
+## 5.2 盘点调整
+
+```text
+adjustStock(materialId, physicalCount, reason, request):
+  BEGIN
+  claimIdempotency(...)
+  material = SELECT * FROM materials WHERE id=materialId FOR UPDATE
+
+  assert physicalCount >= 0
+  assert physicalCount >= material.reserved
+  // 实盘低于 reserved 时拒绝普通盘点，进入异常处理，不允许产生负可用量
+
+  delta = physicalCount - material.onHand
+  if delta == 0:
+      return no-op
+
+  UPDATE materials SET onHand=physicalCount, version=version+1
+  WHERE id=materialId
+
+  INSERT stock_movements(
+      movementType='ADJUST',
+      quantityDelta=delta,
+      reservedDelta=0,
+      onHandAfter=physicalCount,
+      reservedAfter=material.reserved,
+      reason=reason,
+      dedupeKey=request.idempotencyKey
+  )
+  audit(...)
+  saveIdempotencyResult()
+  COMMIT
+```
+
+库存入库同样必须锁定 Material 并写 STOCK_IN 流水。多材料预占按 materialId 升序处理，任一条件更新失败则整个事务回滚。
 ## 6. 制作后取消
 
 ```text
@@ -210,16 +288,30 @@ cancelAfterPreparation(orderId, request):
   order = SELECT * FROM orders WHERE id=orderId FOR UPDATE
   assert order.status == PREPARING
 
-  // 库存已经在 CONSUME 时扣过，本次绝不修改 onHand/reserved
-  for each snapshot in order_items.order_item_materials:
+  // 库存已经在 CONSUME 时扣过，本次绝不修改 onHand/reserved。
+  // BASE/MODIFIER/TAKEAWAY_EXTRA 等来源必须先按 orderItemId + materialId 聚合，
+  // 同一明细同一材料只生成一条 LossRecord。
+  aggregated_loss = GROUP BY orderItemId, materialId:
+      SUM(totalQuantity), weighted unit cost snapshot, SUM(totalCostSnapshot)
+
+  for each loss in aggregated_loss:
       INSERT loss_records(
           materialId, orderId, orderItemId,
-          quantity=snapshot.totalQuantity,
-          unitCostSnapshot=snapshot.unitCostSnapshot,
-          lossCostSnapshot=snapshot.totalCostSnapshot,
+          quantity=loss.totalQuantity,
+          unitCostSnapshot=loss.averageUnitCost,
+          lossCostSnapshot=loss.totalCost,
           reason='PREPARING_CANCEL',
           dedupeKey=orderId+':LOSS:'+orderItemId+':'+materialId
       )
+
+  // 已收款场景必须先退款再取消；取消后禁止出现超收。
+  if order.channel == TAKEAWAY:
+      netPaid = sum(active payments for order) - sum(active refunds)
+      assert netPaid == 0
+  else if order.sessionId:
+      newDue = recalcSessionDueExcluding(order.sessionId, order.id)
+      netPaid = recalcNetPaid(order.sessionId)
+      assert netPaid <= newDue
 
   UPDATE orders
   SET status=CANCELLED, cancelledAt=now(), cancelReason=request.reason, version=version+1
@@ -257,7 +349,8 @@ recordPayment(targetType, targetId, amountFen, request):
   if targetType == ORDER:
       order = SELECT * FROM orders WHERE id=targetId FOR UPDATE
       assert order.channel == TAKEAWAY
-      assert order.status == COMPLETED
+      assert order.status != CANCELLED
+      // 允许待接单、待制作、制作中、已完成阶段登记实际收款
       due = order.totalAmountFen
       paid = sum(active payments WHERE orderId=order.id)
       refunded = sum(active refunds through payments)
@@ -320,7 +413,7 @@ registerRefund(paymentId, amountFen, reason, request):
   COMMIT
 ```
 
-退款记录绑定原收款，不直接修改原收款金额。桌单关闭后的退款作为独立财务事实记录；是否重开桌单属于业务问题，见审查报告。
+退款记录绑定原收款，不直接修改原收款金额。已关闭桌单退款作为独立财务事实记录：不修改桌单 CLOSED 状态、不重新占用桌位、不生成订单，历史销售仍按订单 COMPLETED 时点统计，实收按有效收款减有效退款统计。
 
 ## 10. 修改桌单优惠
 
@@ -367,6 +460,15 @@ changeDiscount(sessionId, newDiscountFen, reason, request):
 4. 按小数余数从大到小补齐 1 分。
 5. 断言所有 `discount_allocations.discountFen` 之和严格等于 `newDiscountFen`。
 
+## 10.1 DiscountAllocation 版本与历史
+
+- `DiningSession.discountVersion` 每次优惠修改加 1。
+- `DiscountAllocation.allocationVersion` 必须等于本次优惠版本。
+- `(sessionId, orderItemId)` 唯一记录当前分摊；OPEN 时允许由分摊事务更新该行。
+- AuditLog 保存修改前后完整的 allocation 数组，因此当前行可更新，但历史变化不丢失。
+- CLOSED 时 `isFinal=true`，数据库触发器禁止再修改或删除。
+- 每次重算后必须断言 SUM(discountFen) == DiningSession.discountFen。
+- allocationVersion 不是展示字段，必须参与对账；若不等于 session.discountVersion，视为数据漂移并告警。
 ## 11. 关闭桌单
 
 ```text
@@ -408,7 +510,7 @@ closeSession(sessionId, request):
   COMMIT
 ```
 
-关闭后不能新增订单、修改优惠或登记新的桌单收款；退款作为独立记录处理，是否重开桌单见业务审查。
+关闭后不能新增订单、修改优惠或登记新的桌单收款；退款作为独立记录处理，不自动重开桌单。
 
 ## 12. 桌单关闭与新订单创建并发
 
@@ -436,3 +538,10 @@ closeSession:
 
 - 若关闭先拿到锁：关闭完成后，新订单看到 `activeSessionId=NULL`，创建新的桌单。
 - 若新订单先拿到锁：新订单提交后，关闭事务必须重新检查该新订单，未完成则关闭失败。
+
+
+
+
+
+
+

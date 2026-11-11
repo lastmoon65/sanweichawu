@@ -146,6 +146,8 @@ python tests/prototype_acceptance.py
 python tests/extended_acceptance.py
 python tests/edge_acceptance.py
 python tests/interaction_checks.py
+python tests/manual_payment.py
+python tests/architecture_checks.py
 ```
 
 截图输出在 `tests/screenshots/`。
@@ -153,7 +155,7 @@ python tests/interaction_checks.py
 ## 9. 已知限制
 
 - 并发是浏览器内 JavaScript 原子操作模拟，不能替代真实后端事务、数据库锁和分布式并发验证。
-- 打包订单在完成时默认登记全额实收，后续可扩展为独立收银记账。
+- 打包订单只有在店员手动登记后才计入实收；制作完成不会自动收款，且允许制作前先登记实际收款。
 - 商品图片使用内置 SVG 插画与主题色模拟，未提供图片上传。
 - 利润为材料毛利，不是净利润。
 - 浏览器清理站点数据会清除原型数据。
@@ -176,4 +178,12 @@ python tests/interaction_checks.py
 - [关键事务伪代码](docs/architecture/v1.2/transactions.md)
 - [一致性检查](docs/architecture/v1.2/consistency-checks.md)
 - [审查报告](docs/architecture/v1.2/review-report.md)
+- [跨门店一致性](docs/architecture/v1.2/store-integrity.md)
+
+
+
+
+- [关键测试案例](docs/architecture/v1.2/test-cases-v1.2.md)
+- [修订清单](docs/architecture/v1.2/change-log-v1.2.md)
+- [验证证据](docs/architecture/v1.2/verification-evidence.md)
 

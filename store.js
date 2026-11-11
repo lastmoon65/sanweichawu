@@ -328,9 +328,15 @@ export class TeaStore {
     }
     if (nextStatus === 'completed') {
       order.completedAt = now;
-      if (order.channel === 'takeaway') this.recordTakeawaySettlement(order, now);
     }
     if (nextStatus === 'cancelled') {
+      if (order.channel === 'takeaway' && this.getOrderPaid(order.id) > 0) return { ok: false, message: '该打包订单已有实收记录，请先登记退款后再取消' };
+      if (order.sessionId) {
+        const current = this.getSessionMoney(order.sessionId);
+        const remainingSubtotal = Math.max(0, current.subtotal - order.subtotal);
+        const remainingDue = Math.max(0, remainingSubtotal - current.discount);
+        if (current.paid > remainingDue) return { ok: false, message: '取消后应收低于已记实收，请先登记退款后再取消' };
+      }
       order.cancelledAt = now;
       if (order.status !== 'making') {
         for (const item of order.items) {
@@ -367,13 +373,31 @@ export class TeaStore {
     return { ok: true, order };
   }
 
-  recordTakeawaySettlement(order, now = new Date().toISOString()) {
-    if (this.state.settlements.some((s) => s.orderId === order.id)) return;
-    this.state.settlements.unshift({
-      id: `SET${++this.state.meta.lastSettlementSeq}`, sessionId: null, orderId: order.id, tableId: null,
-      amountDue: order.subtotal, discount: 0, paid: order.subtotal, unpaid: 0, status: 'closed',
-      createdAt: now, updatedAt: now
+  getOrderPaid(orderId) {
+    return (this.state.payments || [])
+      .filter((p) => p.orderId === orderId && p.status === 'ACTIVE')
+      .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  }
+
+  recordTakeawayPayment(orderId, amount, note = '') {
+    const order = this.getOrder(orderId);
+    if (!order || order.channel !== 'takeaway') return { ok: false, message: '打包订单不存在' };
+    if (order.status === 'cancelled') return { ok: false, message: '已取消订单不能登记收款' };
+    const value = Number(amount || 0);
+    if (!Number.isFinite(value) || value <= 0) return { ok: false, message: '请输入有效收款金额' };
+    const paid = this.getOrderPaid(order.id);
+    const due = Math.max(0, Number(order.subtotal || 0) - Number(order.discountFen || 0));
+    if (paid + value > due + 0.0001) return { ok: false, message: `本次收款超过未结金额 ${money(due - paid)}` };
+    const now = new Date().toISOString();
+    this.state.payments = this.state.payments || [];
+    this.state.payments.unshift({
+      id: `PAY${++this.state.meta.lastPaymentSeq}`,
+      paymentNo: `PAY-${String(this.state.meta.lastPaymentSeq).slice(-5)}`,
+      orderId: order.id, sessionId: null, amount: value, status: 'ACTIVE',
+      receivedAt: now, note
     });
+    this.save();
+    return { ok: true };
   }
 
   getSessionMoney(sessionId) {
@@ -495,6 +519,7 @@ export class TeaStore {
 }
 
 export { STATUS_LABEL, TX_LABEL, localDateKey };
+
 
 
 

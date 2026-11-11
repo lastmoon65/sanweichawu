@@ -8,9 +8,12 @@
 4. [数据一致性检查](./consistency-checks.md)
 5. [约束与类型决策](./constraint-decisions.md)
 6. [审查报告](./review-report.md)
-7. [MySQL 补充约束](./constraints.sql)
-8. [由 Prisma 生成的 MySQL 基线 DDL](./generated-mysql-ddl.sql)
-
+7. [跨门店归属一致性](./store-integrity.md)
+8. [关键测试案例](./test-cases-v1.2.md)
+9. [修订清单](./change-log-v1.2.md)
+10. [验证证据](./verification-evidence.md)
+11. [MySQL 补充约束](./constraints.sql)
+12. [由 Prisma 生成的 MySQL 基线 DDL](./generated-mysql-ddl.sql)
 ## 设计范围
 
 模型覆盖 27 个 Prisma 实体：
@@ -52,4 +55,14 @@ Prisma Schema 无法完整表达以下跨行/跨表规则，因此补充了 `con
 ## 当前状态
 
 这是设计基线，不是可直接上线的业务实现。正式开发前先处理 `review-report.md` 中 P0 业务确认项。
+
+
+
+
+
+
+
+
+
+
 

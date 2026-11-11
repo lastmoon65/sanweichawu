@@ -130,7 +130,7 @@ CREATE TABLE `recipe_versions` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
     `variantId` BIGINT NOT NULL,
     `versionNo` INTEGER NOT NULL,
-    `status` ENUM('ACTIVE', 'ARCHIVED') NOT NULL DEFAULT 'ACTIVE',
+    `status` ENUM('DRAFT', 'ACTIVE', 'ARCHIVED') NOT NULL DEFAULT 'ACTIVE',
     `effectiveAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `createdByStaffId` BIGINT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -269,6 +269,7 @@ CREATE TABLE `loss_records` (
     INDEX `loss_records_storeId_occurredAt_idx`(`storeId`, `occurredAt`),
     INDEX `loss_records_materialId_occurredAt_idx`(`materialId`, `occurredAt`),
     INDEX `loss_records_orderId_idx`(`orderId`),
+    UNIQUE INDEX `loss_records_orderItemId_materialId_key`(`orderItemId`, `materialId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -479,7 +480,7 @@ CREATE TABLE `idempotency_records` (
     `expiresAt` DATETIME(3) NOT NULL,
 
     INDEX `idempotency_records_status_expiresAt_idx`(`status`, `expiresAt`),
-    UNIQUE INDEX `idempotency_records_storeId_idempotencyKey_key`(`storeId`, `idempotencyKey`),
+    UNIQUE INDEX `idempotency_records_storeId_endpoint_idempotencyKey_key`(`storeId`, `endpoint`, `idempotencyKey`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

@@ -27,6 +27,7 @@
 | recipe_modifiers | `(recipeVersionId, optionValueId, materialId, targetRole)` | 同一调整项对同一材料只配置一次 |
 | stock_movements | `dedupeKey` | 同一业务库存动作只能成功写一次 |
 | loss_records | `dedupeKey` | 同一损耗归因只写一次 |
+| loss_records | `(orderItemId, materialId)` | BASE/MODIFIER 等来源聚合后，同一明细同一材料只有一条损耗 |
 | dining_tables | `(storeId, code)` | 桌码在门店内唯一 |
 | dining_tables | `activeSessionId` | 一个桌位最多绑定一个活动桌单 |
 | orders | `orderNo` | 订单业务编号全局唯一 |
@@ -35,7 +36,7 @@
 | payment_records | `paymentNo` | 收款流水编号唯一 |
 | refund_records | `refundNo` | 退款流水编号唯一 |
 | discount_allocations | `(sessionId, orderItemId)` | 每个桌单明细只有一条当前分摊记录 |
-| idempotency_records | `(storeId, idempotencyKey)` | 同一门店同一幂等键只能产生一个执行结果 |
+| idempotency_records | `(storeId, endpoint, idempotencyKey)` | 同一门店、同一接口、同一幂等键只能产生一个执行结果 |
 
 补充 SQL 生成列唯一约束：
 
@@ -53,6 +54,10 @@
 ### Staff 软删除
 
 Staff 使用 `status` 停用，不使用 `deletedAt`。`(storeId,userId)` 保持唯一，避免同一员工在同一店铺产生多条历史权限记录。
+
+### Idempotency 作用域
+
+幂等键按 Store + endpoint + key 限定。同一 UUID 被错误复用于不同接口时不会互相阻塞；同一接口同 Key 不同 requestHash 必须返回 409。
 
 ### PaymentRecord 金额
 
@@ -144,3 +149,6 @@ HAVING o.subtotalFen <> SUM(oi.lineSubtotalFen);
 10. 顾客订单查询归属。
 
 不能把 `constraints.sql` 中的触发器当装饰：CI 必须在真实 MySQL 8 上执行迁移、触发器和并发用例。
+
+
+

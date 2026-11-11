@@ -129,7 +129,8 @@ BEGIN
       SELECT 1 FROM `dining_sessions`
       WHERE `id` = NEW.`activeSessionId`
         AND `tableId` = NEW.`id`
-        AND `status` = 'OPEN'
+        AND `storeId` = NEW.`storeId`
+        AND status = 'OPEN'
     ) THEN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'activeSessionId must reference an OPEN session of this table';
     END IF;
@@ -145,7 +146,8 @@ BEGIN
       SELECT 1 FROM `dining_sessions`
       WHERE `id` = NEW.`activeSessionId`
         AND `tableId` = NEW.`id`
-        AND `status` = 'OPEN'
+        AND `storeId` = NEW.`storeId`
+        AND status = 'OPEN'
     ) THEN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'activeSessionId must reference an OPEN session of this table';
     END IF;
@@ -234,7 +236,6 @@ BEGIN
   END IF;
 END$$
 
-DELIMITER ;
 
 -- 7. Snapshot and accounting fact tables are append-only
 CREATE TRIGGER `trg_order_item_snapshot_no_update` BEFORE UPDATE ON `order_items`
@@ -365,4 +366,235 @@ END$$
 CREATE TRIGGER `trg_discount_allocation_no_delete` BEFORE DELETE ON `discount_allocations`
 FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Discount allocations cannot be deleted';
 DELIMITER ;
+
+
+-- 11. Cross-store referential guards
+-- Prisma cannot express these safely because several relations are nullable or use
+-- denormalized store context. These triggers are part of the migration contract.
+DELIMITER $$
+
+CREATE TRIGGER `trg_session_store_bi`
+BEFORE INSERT ON `dining_sessions`
+FOR EACH ROW
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM `dining_tables`
+    WHERE `id` = NEW.`tableId` AND `storeId` = NEW.`storeId`
+  ) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'DiningSession.tableId must belong to the same store';
+  END IF;
+END$$
+
+CREATE TRIGGER `trg_session_store_bu`
+BEFORE UPDATE ON `dining_sessions`
+FOR EACH ROW
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM `dining_tables`
+    WHERE `id` = NEW.`tableId` AND `storeId` = NEW.`storeId`
+  ) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'DiningSession.tableId must belong to the same store';
+  END IF;
+END$$
+
+CREATE TRIGGER `trg_order_store_bi`
+BEFORE INSERT ON `orders`
+FOR EACH ROW
+BEGIN
+  IF NEW.`channel` = 'DINE' THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM `dining_sessions`
+      WHERE `id` = NEW.`sessionId`
+        AND `tableId` = NEW.`tableId`
+        AND `storeId` = NEW.`storeId`
+        AND `status` = 'OPEN'
+    ) THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Dine order session/table/store mismatch';
+    END IF;
+  END IF;
+END$$
+
+CREATE TRIGGER `trg_order_store_bu`
+BEFORE UPDATE ON `orders`
+FOR EACH ROW
+BEGIN
+  IF NEW.`channel` = 'DINE' THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM `dining_sessions`
+      WHERE `id` = NEW.`sessionId`
+        AND `tableId` = NEW.`tableId`
+        AND `storeId` = NEW.`storeId`
+    ) THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Dine order session/table/store mismatch';
+    END IF;
+  END IF;
+END$$
+
+CREATE TRIGGER `trg_order_item_store_bi`
+BEFORE INSERT ON `order_items`
+FOR EACH ROW
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM `orders` o
+    JOIN `products` p ON p.`id` = NEW.`productId`
+    JOIN `product_variants` v ON v.`id` = NEW.`variantId` AND v.`productId` = p.`id`
+    WHERE o.`id` = NEW.`orderId` AND p.`storeId` = o.`storeId`
+  ) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'OrderItem product/variant/order store mismatch';
+  END IF;
+END$$
+
+CREATE TRIGGER `trg_variant_recipe_store_bi`
+BEFORE INSERT ON `variant_recipes`
+FOR EACH ROW
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM `recipe_versions` rv
+    JOIN `product_variants` v ON v.`id` = rv.`variantId`
+    JOIN `products` p ON p.`id` = v.`productId`
+    JOIN `materials` m ON m.`id` = NEW.`materialId` AND m.`storeId` = p.`storeId`
+    WHERE rv.`id` = NEW.`recipeVersionId`
+  ) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Recipe material must belong to the same store as the variant';
+  END IF;
+END$$
+
+CREATE TRIGGER `trg_recipe_modifier_store_bi`
+BEFORE INSERT ON `recipe_modifiers`
+FOR EACH ROW
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM `recipe_versions` rv
+    JOIN `product_variants` v ON v.`id` = rv.`variantId`
+    JOIN `products` p ON p.`id` = v.`productId`
+    JOIN `variant_option_values` ov ON ov.`id` = NEW.`optionValueId`
+    JOIN `variant_option_groups` og ON og.`id` = ov.`optionGroupId` AND og.`variantId` = v.`id`
+    JOIN `materials` m ON m.`id` = NEW.`materialId` AND m.`storeId` = p.`storeId`
+    WHERE rv.`id` = NEW.`recipeVersionId`
+  ) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'RecipeModifier option/material/variant mismatch';
+  END IF;
+END$$
+
+CREATE TRIGGER `trg_variant_recipe_store_bu`
+BEFORE UPDATE ON `variant_recipes`
+FOR EACH ROW
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM `recipe_versions` rv
+    JOIN `product_variants` v ON v.`id` = rv.`variantId`
+    JOIN `products` p ON p.`id` = v.`productId`
+    JOIN `materials` m ON m.`id` = NEW.`materialId` AND m.`storeId` = p.`storeId`
+    WHERE rv.`id` = NEW.`recipeVersionId`
+  ) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Recipe material must belong to the same store as the variant';
+  END IF;
+END$$
+
+CREATE TRIGGER `trg_recipe_modifier_store_bu`
+BEFORE UPDATE ON `recipe_modifiers`
+FOR EACH ROW
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM `recipe_versions` rv
+    JOIN `product_variants` v ON v.`id` = rv.`variantId`
+    JOIN `products` p ON p.`id` = v.`productId`
+    JOIN `variant_option_values` ov ON ov.`id` = NEW.`optionValueId`
+    JOIN `variant_option_groups` og ON og.`id` = ov.`optionGroupId` AND og.`variantId` = v.`id`
+    JOIN `materials` m ON m.`id` = NEW.`materialId` AND m.`storeId` = p.`storeId`
+    WHERE rv.`id` = NEW.`recipeVersionId`
+  ) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'RecipeModifier option/material/variant mismatch';
+  END IF;
+END$$
+CREATE TRIGGER `trg_order_item_material_store_bi`
+BEFORE INSERT ON `order_item_materials`
+FOR EACH ROW
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM `order_items` oi
+    JOIN `orders` o ON o.`id` = oi.`orderId`
+    JOIN `materials` m ON m.`id` = NEW.`materialId` AND m.`storeId` = o.`storeId`
+    WHERE oi.`id` = NEW.`orderItemId`
+  ) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'OrderItemMaterial material/store mismatch';
+  END IF;
+END$$
+
+CREATE TRIGGER `trg_stock_movement_store_bi`
+BEFORE INSERT ON `stock_movements`
+FOR EACH ROW
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM `materials`
+    WHERE `id` = NEW.`materialId` AND `storeId` = NEW.`storeId`
+  ) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'StockMovement material/store mismatch';
+  END IF;
+  IF NEW.`orderId` IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM `orders`
+    WHERE `id` = NEW.`orderId` AND `storeId` = NEW.`storeId`
+  ) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'StockMovement order/store mismatch';
+  END IF;
+END$$
+
+CREATE TRIGGER `trg_loss_record_store_bi`
+BEFORE INSERT ON `loss_records`
+FOR EACH ROW
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM `materials`
+    WHERE `id` = NEW.`materialId` AND `storeId` = NEW.`storeId`
+  ) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'LossRecord material/store mismatch';
+  END IF;
+  IF NEW.`orderId` IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM `orders`
+    WHERE `id` = NEW.`orderId` AND `storeId` = NEW.`storeId`
+  ) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'LossRecord order/store mismatch';
+  END IF;
+END$$
+
+CREATE TRIGGER `trg_payment_target_store_bi`
+BEFORE INSERT ON `payment_records`
+FOR EACH ROW
+BEGIN
+  IF NEW.`sessionId` IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM `dining_sessions`
+    WHERE `id` = NEW.`sessionId` AND `storeId` = NEW.`storeId`
+  ) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Payment session/store mismatch';
+  END IF;
+  IF NEW.`orderId` IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM `orders`
+    WHERE `id` = NEW.`orderId` AND `storeId` = NEW.`storeId` AND `channel` = 'TAKEAWAY'
+  ) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Order payment must reference a takeaway order in the same store';
+  END IF;
+END$$
+
+CREATE TRIGGER `trg_discount_allocation_store_bi`
+BEFORE INSERT ON `discount_allocations`
+FOR EACH ROW
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM `order_items` oi
+    JOIN `orders` o ON o.`id` = oi.`orderId`
+    WHERE oi.`id` = NEW.`orderItemId` AND o.`sessionId` = NEW.`sessionId`
+  ) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'DiscountAllocation order item/session mismatch';
+  END IF;
+END$$
+
+DELIMITER ;
+
 

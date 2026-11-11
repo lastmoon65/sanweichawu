@@ -75,6 +75,11 @@ function productArt(product, compact = false) {
   </div>`;
 }
 
+function takeawayPaymentSummary(order) {
+  const paid = store.getOrderPaid(order.id);
+  const due = Math.max(0, Number(order.subtotal || 0) - Number(order.discountFen || 0));
+  return { paid, due, unpaid: Math.max(0, due - paid) };
+}
 function statusPill(status) {
   return `<span class="status-pill ${statusClass[status] || ''}">${STATUS_LABEL[status] || status}</span>`;
 }
@@ -258,12 +263,14 @@ function renderWorkbench() {
     <div class="order-board">
       ${visible.map((order) => {
         const action = actionMap[order.status];
+        const cash = order.channel === 'takeaway' ? takeawayPaymentSummary(order) : null;
         return `<article class="order-card status-${order.status}">
           <div class="order-card-accent"></div>
           <div class="order-card-head"><div class="order-location">${order.channel === 'takeaway' ? '<span class="takeaway-mark">袋</span><div><b>打包外带</b><small>独立订单</small></div>' : `<span class="table-mark">${esc(order.tableId)}</span><div><b>${esc(order.tableId)} 桌</b><small>桌单 ${esc(order.sessionId)}</small></div>`}</div>${statusPill(order.status)}</div>
           <div class="order-number-row"><span>${esc(order.orderNo)}</span><time>${fmtTime(order.createdAt)}</time></div>
+          ${cash ? `<div class="takeaway-pay-line"><span>应收 ${money(cash.due)} · 实收 ${money(cash.paid)}</span><b class="${cash.unpaid ? 'text-warn' : 'text-good'}">${cash.unpaid ? `未结 ${money(cash.unpaid)}` : '已收清'}</b></div>` : ''}
           <div class="order-item-list">${order.items.map((item) => `<div class="order-item"><div class="item-qty">×${item.quantity}</div><div class="item-main"><b>${esc(item.productName)}</b><span>${esc(item.variantName)} · ${esc(item.options?.strength || '')}<em>${esc(item.options?.method || '')}</em></span>${item.options?.note ? `<small class="item-note">备注：${esc(item.options.note)}</small>` : ''}</div><strong>${money(item.subtotal)}</strong></div>`).join('')}</div>
-          <div class="order-card-foot"><div><span class="muted-label">订单金额</span><b>${money(order.subtotal)}</b></div><div class="order-actions">${action ? `<button class="primary-btn small" data-action="advance-order" data-order-id="${order.id}" data-next="${action[0]}">${action[1]}</button>` : `<button class="soft-btn small" data-action="open-order-detail" data-order-id="${order.id}">查看详情</button>`}${!['completed', 'cancelled'].includes(order.status) ? `<button class="ghost-btn danger small" data-action="open-cancel-order" data-order-id="${order.id}">取消</button>` : ''}</div></div>
+          <div class="order-card-foot"><div><span class="muted-label">订单金额</span><b>${money(order.subtotal)}</b></div><div class="order-actions">${cash && cash.unpaid > 0 && order.status !== 'cancelled' ? `<button class="soft-btn small" data-action="open-takeaway-payment" data-order-id="${order.id}">登记收款</button>` : ''}${action ? `<button class="primary-btn small" data-action="advance-order" data-order-id="${order.id}" data-next="${action[0]}">${action[1]}</button>` : `<button class="soft-btn small" data-action="open-order-detail" data-order-id="${order.id}">查看详情</button>`}${!['completed', 'cancelled'].includes(order.status) ? `<button class="ghost-btn danger small" data-action="open-cancel-order" data-order-id="${order.id}">取消</button>` : ''}</div></div>
           ${order.status === 'cancelled' && order.lossCost > 0 ? `<div class="loss-strip">制作后取消 · 材料损耗 ${money(order.lossCost)} 已单独记录</div>` : ''}
         </article>`;
       }).join('')}
@@ -389,7 +396,9 @@ function getAnalytics() {
     return false;
   });
   const discount = settlements.reduce((sum, s) => sum + Number(s.discount || 0), 0);
-  const paid = settlements.reduce((sum, s) => sum + Number(s.paid || 0), 0);
+  const takeawayPayments = (store.state.payments || []).filter((p) => orderIds.has(p.orderId) && p.status === 'ACTIVE');
+  const paid = settlements.reduce((sum, s) => sum + Number(s.paid || 0), 0)
+    + takeawayPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
   const actualReceivable = Math.max(0, sales - discount);
   const unpaid = Math.max(0, actualReceivable - paid);
   const lossOrders = allToday.filter((o) => o.status === 'cancelled' && Number(o.lossCost) > 0);
@@ -520,7 +529,7 @@ function renderAnalytics() {
       </div>
       <div class="panel-card insight-panel"><span class="eyebrow">TODAY'S SIGNAL</span><h2>${esc(bestGross.name)} 贡献了最高材料毛利</h2><p>预计材料毛利 <b>${money(bestGross.gross)}</b>，毛利率 <b>${bestGross.rate.toFixed(1)}%</b>。该数值不包含房租、人工与水电。</p><div class="insight-rule"></div><p class="muted-copy">取消但已制作订单的材料成本已计入损耗 <b>${money(a.loss)}</b>，未混入正常毛利。</p></div>
     </div>
-    <div class="data-note"><span>数据口径</span><p>销售额按订单快照计算；优惠只来自桌单结账记录，并按订单金额占比分摊到商品毛利；已制作后取消的订单不计销售，其材料成本进入损耗。打包订单完成时默认按应收登记实收，可后续扩展为独立收银登记。</p></div>
+    <div class="data-note"><span>数据口径</span><p>销售额按订单快照计算；优惠只来自桌单结账记录，并按订单金额占比分摊到商品毛利；已制作后取消的订单不计销售，其材料成本进入损耗。打包订单制作完成不会自动登记实收；店员在实际收到钱后手动登记，未完成制作前也可以登记。</p></div>
   </section>`;
 }
 
@@ -537,6 +546,7 @@ function renderModal() {
   if (type === 'product') root.innerHTML = renderProductModal();
   else if (type === 'cart') root.innerHTML = renderCartModal();
   else if (type === 'order-detail') root.innerHTML = renderOrderDetailModal(ui.modal.orderId);
+  else if (type === 'takeaway-payment') root.innerHTML = renderTakeawayPaymentModal(ui.modal.orderId);
   else if (type === 'table') root.innerHTML = renderTableModal(ui.modal.tableId);
   else if (type === 'cancel-order') root.innerHTML = renderCancelOrderModal(ui.modal.orderId);
   else if (type === 'product-form') root.innerHTML = renderProductFormModal();
@@ -581,7 +591,7 @@ function renderCartModal() {
     return sum + Number(v?.price || 0) * line.quantity;
   }, 0);
   return modalShell('确认点单', 'YOUR TEA ORDER', `<div class="cart-modal">
-    <div class="cart-context"><div><span>${store.state.customer.mode === 'takeaway' ? '打包外带' : '堂饮'}</span><b>${store.state.customer.mode === 'takeaway' ? '不关联桌号' : `${esc(store.state.customer.currentTableId)} 桌`}</b></div><small>${store.state.customer.mode === 'takeaway' ? '制作完成后按应收记录实收' : '提交后进入同一桌单，可继续扫码加单'}</small></div>
+    <div class="cart-context"><div><span>${store.state.customer.mode === 'takeaway' ? '打包外带' : '堂饮'}</span><b>${store.state.customer.mode === 'takeaway' ? '不关联桌号' : `${esc(store.state.customer.currentTableId)} 桌`}</b></div><small>${store.state.customer.mode === 'takeaway' ? '实际收款后由店员手动登记' : '提交后进入同一桌单，可继续扫码加单'}</small></div>
     <div class="cart-lines">${cart.map((line) => {
       const p = store.getProduct(line.productId);
       const v = store.getVariant(line.productId, line.variantId);
@@ -593,6 +603,18 @@ function renderCartModal() {
   </div>`);
 }
 
+function renderTakeawayPaymentModal(orderId) {
+  const order = store.getOrder(orderId);
+  if (!order || order.channel !== 'takeaway') return '';
+  const cash = takeawayPaymentSummary(order);
+  return modalShell(`登记收款 · ${order.orderNo}`, 'MANUAL CASH RECORD', `<form class="compact-form" data-form="takeaway-payment" data-order-id="${order.id}">
+    <div class="stock-current-card"><span>当前已登记实收</span><b>${money(cash.paid)}</b><small>订单应收 ${money(cash.due)} · 未结 ${money(cash.unpaid)}</small></div>
+    <label><span>本次实收金额</span><input class="text-input" name="amount" type="number" min="0.01" max="${cash.unpaid}" step="0.01" value="${cash.unpaid.toFixed(2)}" required></label>
+    <label><span>收款备注</span><input class="text-input" name="note" placeholder="例如：现金收款、顾客已扫码给店员"></label>
+    <div class="info-box">这里只登记店员确认已经收到的钱。系统不连接在线支付，也不会自动判断支付成功。打包订单可以在制作完成前登记实收。</div>
+    <div class="form-actions"><button type="button" class="soft-btn" data-action="close-modal">取消</button><button type="submit" class="primary-btn">确认登记实收</button></div>
+  </form>`);
+}
 function renderOrderDetailModal(orderId) {
   const o = store.getOrder(orderId);
   if (!o) return '';
@@ -604,6 +626,7 @@ function renderOrderDetailModal(orderId) {
     ${o.status === 'cancelled' ? `<div class="cancel-banner"><b>订单已取消</b><p>${esc(o.cancellationReason || '未填写取消原因')}${o.lossCost > 0 ? ` · 已制作材料损耗 ${money(o.lossCost)}` : ' · 预占库存已释放'}</p></div>` : ''}
     <div class="detail-items">${o.items.map((item) => `<div class="detail-item"><div class="detail-item-main"><div class="item-qty">×${item.quantity}</div><div><b>${esc(item.productName)}</b><span>${esc(item.variantName)} · ${esc(item.options?.strength)} · ${esc(item.options?.method)}</span>${item.options?.note ? `<small>备注：${esc(item.options.note)}</small>` : ''}</div></div><div class="detail-item-price"><b>${money(item.subtotal)}</b><small>成本 ${money(item.totalCost)}</small></div></div>`).join('')}</div>
     <div class="snapshot-box"><div class="snapshot-head"><b>订单成本快照</b><span>创建后不随商品或原料改价</span></div>${o.items.flatMap((i) => [...i.materials, ...i.packaging]).map((m) => `<div class="snapshot-row"><span>${esc(m.name)}</span><span>${m.qty} ${esc(m.unit)} × ${money(m.unitPrice)}</span><b>${money(m.qty * m.unitPrice)}</b></div>`).join('')}<div class="snapshot-total"><span>预计材料成本</span><b>${money(o.totalCost)}</b></div></div>
+    ${o.channel === 'takeaway' ? `<div class="takeaway-cash-box"><span>打包实收登记</span><b>${money(takeawayPaymentSummary(o).paid)} / ${money(o.subtotal)}</b><small>${takeawayPaymentSummary(o).unpaid ? `未结 ${money(takeawayPaymentSummary(o).unpaid)}` : '已收清'} · 仅记录店员确认收到的现金</small></div>` : ''}
     <div class="detail-total"><span>订单金额</span><b>${money(o.subtotal)}</b></div>
   </div>`, 'medium');
 }
@@ -781,6 +804,7 @@ function handleClick(event) {
     return renderApp();
   }
   if (action === 'open-order-detail') { ui.modal = { type: 'order-detail', orderId: el.dataset.orderId }; return renderApp(); }
+  if (action === 'open-takeaway-payment') { ui.modal = { type: 'takeaway-payment', orderId: el.dataset.orderId }; return renderApp(); }
   if (action === 'ranking-metric') { ui.rankingMetric = el.dataset.metric; return renderApp(); }
   if (action === 'work-filter') { ui.workFilter = el.dataset.filter; return renderApp(); }
   if (action === 'advance-order') {
@@ -939,6 +963,13 @@ function handleSubmit(event) {
     ui.modal = null; notify(form.dataset.moveType === 'adjust' ? '库存已调整' : '入库完成，商品可售状态已刷新', 'success'); return renderApp();
   }
 
+  if (type === 'takeaway-payment') {
+    const result = store.recordTakeawayPayment(form.dataset.orderId, form.elements.amount.value, form.elements.note.value.trim());
+    if (!result.ok) return notify(result.message, 'error');
+    ui.modal = null;
+    notify('打包订单实收已登记');
+    return renderApp();
+  }
   if (type === 'cancel-order') {
     const reason = form.elements.reason.value.trim();
     const result = store.transitionOrder(form.dataset.orderId, 'cancelled');
@@ -973,6 +1004,9 @@ document.addEventListener('submit', handleSubmit);
 document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && ui.modal) closeModal(); });
 store.subscribe(renderApp);
 renderApp();
+
+
+
 
 
 

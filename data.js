@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'tea-house-prototype-v1';
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 const MATERIAL_SEED = [
   { id: 'm-dhp', name: '大红袍茶叶', stock: 2000, reserved: 0, unit: '克', warning: 300, price: 0.30 },
@@ -152,11 +152,11 @@ function createInitialState() {
   const products = clone(PRODUCT_SEED);
   const state = {
     schemaVersion: SCHEMA_VERSION,
-    meta: { createdAt: new Date().toISOString(), lastOrderSeq: 1000, lastSessionSeq: 100, lastSettlementSeq: 100 },
+    meta: { createdAt: new Date().toISOString(), lastOrderSeq: 1000, lastSessionSeq: 100, lastSettlementSeq: 100, lastPaymentSeq: 100 },
     materials,
     products,
     tables: Array.from({ length: 8 }, (_, i) => ({ id: `T${String(i + 1).padStart(2, '0')}`, capacity: i % 3 === 0 ? 4 : 2 })),
-    sessions: [], orders: [], settlements: [], inventoryTransactions: [],
+    sessions: [], orders: [], settlements: [], payments: [], inventoryTransactions: [],
     customer: { mode: 'dine', currentTableId: null, cart: [], recentOrderId: null, view: 'catalog', category: '全部' },
     ui: { view: 'customer' }
   };
@@ -221,13 +221,14 @@ function createInitialState() {
   });
   consumeForSeed(state, takeawayItem, takeawayAt, takeawayNo);
   state.inventoryTransactions.filter((t) => t.orderNo === takeawayNo).forEach((t) => t.orderId = takeawayId);
-  state.settlements.push({
-    id: `SET${++state.meta.lastSettlementSeq}`, sessionId: null, orderId: takeawayId, tableId: null,
-    amountDue: 25, discount: 0, paid: 25, unpaid: 0, status: 'closed',
-    createdAt: takeawayAt, updatedAt: takeawayAt
+  state.payments.push({
+    id: `PAY${++state.meta.lastPaymentSeq}`, paymentNo: `PAY-${String(state.meta.lastPaymentSeq).slice(-5)}`,
+    orderId: takeawayId, sessionId: null, amount: 25, status: 'ACTIVE',
+    receivedAt: takeawayAt, note: '演示订单：店员确认实际收款'
   });
 
   return state;
 }
 
 export { STORAGE_KEY, SCHEMA_VERSION, createInitialState, clone, localDateKey, money, makeSnapshot };
+

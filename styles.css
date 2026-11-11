@@ -273,7 +273,10 @@ h1, h2, h3, .brand-name { font-family: "Songti SC", "STSong", "SimSun", "Noto Se
 .muted-label { display: block; color: var(--muted); font-size: 8px; margin-bottom: 3px; }
 .order-card-foot > div > b { font-size: 17px; }
 .order-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
-.loss-strip { margin: 12px -18px -18px; padding: 10px 18px; background: var(--danger-soft); color: var(--danger); font-size: 8px; }
+.takeaway-pay-line { display:flex; justify-content:space-between; gap:10px; align-items:center; margin:-2px 0 10px; padding:7px 9px; border-radius:9px; background:rgba(181,140,92,.10); color:var(--muted); font-size:8px; }
+.takeaway-pay-line b { font-size:9px; }
+.takeaway-cash-box { display:grid; grid-template-columns:1fr auto; gap:4px; margin-top:14px; padding:12px 14px; border-radius:12px; background:var(--surface-soft); }
+.takeaway-cash-box span { color:var(--muted); font-size:8px; }.takeaway-cash-box b { font-size:22px; font-family:"Songti SC","STSong","SimSun",serif; }.takeaway-cash-box small { grid-column:1/-1; color:var(--muted); font-size:8px; }.loss-strip { margin: 12px -18px -18px; padding: 10px 18px; background: var(--danger-soft); color: var(--danger); font-size: 8px; }
 .operation-note { display: flex; gap: 13px; align-items: flex-start; margin-top: 22px; padding: 16px 18px; border-radius: 15px; background: rgba(255,255,255,.45); border: 1px solid var(--line); }
 .note-icon { flex: none; width: 23px; height: 23px; border-radius: 50%; display: grid; place-items: center; background: var(--sage); color: var(--green); font-family: serif; font-size: 12px; }
 .operation-note b { font-size: 11px; }.operation-note p { color: var(--muted); font-size: 9px; line-height: 1.7; margin-top: 4px; }
@@ -513,6 +516,7 @@ h1, h2, h3, .brand-name { font-family: "Songti SC", "STSong", "SimSun", "Noto Se
   .table-grid-mini { grid-template-columns: repeat(4, 1fr); gap: 6px; }.scan-table-card b { font-size: 17px; }
   .orders-heading { flex-direction: column; }
 }
+
 
 
 

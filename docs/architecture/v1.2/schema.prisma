@@ -50,6 +50,7 @@ enum InventoryMode {
 }
 
 enum RecipeStatus {
+  DRAFT
   ACTIVE
   ARCHIVED
 }
@@ -457,6 +458,7 @@ model LossRecord {
   orderItem     OrderItem? @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
   operatorStaff Staff?     @relation("LossOperator", fields: [operatorStaffId], references: [id], onDelete: SetNull)
 
+  @@unique([orderItemId, materialId])
   @@index([storeId, occurredAt])
   @@index([materialId, occurredAt])
   @@index([orderId])
@@ -709,7 +711,7 @@ model IdempotencyRecord {
 
   store Store @relation(fields: [storeId], references: [id], onDelete: Restrict)
 
-  @@unique([storeId, idempotencyKey])
+  @@unique([storeId, endpoint, idempotencyKey])
   @@index([status, expiresAt])
   @@map("idempotency_records")
 }
