@@ -35,7 +35,7 @@ with sync_playwright() as p:
 
     page.locator('.nav-pill[data-view="workbench"]').click()
     card = page.locator('.order-card').filter(has_text=order['orderNo'])
-    card.get_by_role('button', name='登记收款').click()
+    card.locator('[data-action="open-takeaway-payment"]').click()
     form = page.locator('form[data-form="takeaway-payment"]')
     expect(form.locator('input[name="amount"]')).to_be_visible()
     form.locator('input[name="amount"]').fill(str(order['subtotal']))

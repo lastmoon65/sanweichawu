@@ -14,7 +14,15 @@
   - 业务事务回滚时，PROCESSING 记录一并回滚，允许用户用同 Key 重试。
   - 业务记录与 SUCCEEDED 响应必须在同一事务提交，禁止先提交业务再异步保存幂等结果。
 - 所有聚合金额均在事务内按事实表重新计算，不采用前端传来的余额。
-- 跨门店边界统一在事务内调用 `assertStoreOwnership(tx, storeId, { tableId, sessionId, orderId, productId, materialId, paymentId })`；SQL 触发器再做数据库兜底。
+- 跨门店边界统一在事务内调用 `assertStoreOwnership(tx, storeId, refs)`；SQL 触发器再做数据库兜底。
+- `refs` 至少覆盖：`tableId`、`sessionId`、`orderId`、`orderItemId`、`categoryId`、`productId`、`variantId`、`recipeVersionId`、`materialId`、`paymentId`、`staffId`。
+- 下单校验配方时传 `requireActiveRecipe: true`；历史订单读取不要求 ACTIVE，因为归档配方仍是历史事实。`staffId` 必须来自认证上下文，不能信任请求体。`- 关键组合规则：
+  - Product.categoryId → Category.storeId。
+  - OrderItem.variantId → ProductVariant.productId → Product.storeId。
+  - OrderItem.recipeVersionId → RecipeVersion.variantId，且必须等于 OrderItem.variantId。
+  - VariantRecipe.recipeVersionId + materialId 必须同门店。
+  - PaymentRecord 的 session/order 必须同店。
+  - DiscountAllocation.orderItemId 必须属于 session 对应订单。
 
 ## 1. 创建堂饮订单
 
@@ -49,6 +57,7 @@ createDineOrder(request):
   assert countPendingOrders(customer) < policy.maxPendingOrdersPerCustomer
   assert countPendingOrders(session) < policy.maxPendingOrdersPerSession
 
+  for each requested item: assertStoreOwnership(tx, storeId, { categoryId, productId, variantId, recipeVersionId, requireActiveRecipe: true })
   serverCart = validateProductsAndRecomputePrice(request.items)
   variants = SELECT active recipes / variants FOR SHARE
   snapshots = buildOrderItemSnapshots(serverCart, variants)
@@ -90,6 +99,7 @@ createTakeawayOrder(request):
   policy = read StoreOrderPolicy
   assert countPendingTakeawayOrders(customer) < policy.maxPendingOrdersPerCustomer
 
+  for each requested item: assertStoreOwnership(tx, storeId, { categoryId, productId, variantId, recipeVersionId, requireActiveRecipe: true })
   serverCart = validateProductsAndRecomputePrice(...)
   snapshots = buildOrderItemSnapshots(channel=TAKEAWAY)
   requirements = aggregateMaterials(BASE + TAKEAWAY_EXTRA + MODIFIER)
@@ -168,16 +178,18 @@ reserveStock(orderId, aggregatedRequirements, dedupePrefix):
 ## 5. 开始制作
 
 ```text
-startPreparation(orderId, request):
+startPreparation(storeId, orderId, request):
   BEGIN
   claimIdempotency(...)
 
   order = SELECT * FROM orders WHERE id=orderId FOR UPDATE
+  assertStoreOwnership(tx, storeId, { orderId, staffId: actor.staffId })
   assert order.status == ACCEPTED
   assert order.version == request.expectedVersion
 
   materialsNeed = aggregate OrderItemMaterial by materialId for this order
   for each material in materialId ASC:
+      assertStoreOwnership(tx, storeId, { orderId, materialId: material.materialId, staffId: actor.staffId })
       affected = UPDATE materials
                  SET onHand = onHand - qty,
                      reserved = reserved - qty,
@@ -207,11 +219,12 @@ startPreparation(orderId, request):
 ## 5.1 配方版本 DRAFT → ACTIVE → ARCHIVED
 
 ```text
-publishRecipeVersion(variantId, draftVersionId, request):
+publishRecipeVersion(storeId, variantId, draftVersionId, request):
   BEGIN
   claimIdempotency(...)
 
   variant = SELECT * FROM product_variants WHERE id=variantId FOR UPDATE
+  assertStoreOwnership(tx, storeId, { variantId, recipeVersionId: draftVersionId, staffId: actor.staffId })
 
   versions = SELECT * FROM recipe_versions
              WHERE variantId=variantId
@@ -248,9 +261,10 @@ publishRecipeVersion(variantId, draftVersionId, request):
 ## 5.2 盘点调整
 
 ```text
-adjustStock(materialId, physicalCount, reason, request):
+adjustStock(storeId, materialId, physicalCount, reason, request):
   BEGIN
   claimIdempotency(...)
+  assertStoreOwnership(tx, storeId, { materialId, staffId: actor.staffId })
   material = SELECT * FROM materials WHERE id=materialId FOR UPDATE
 
   assert physicalCount >= 0
@@ -282,10 +296,11 @@ adjustStock(materialId, physicalCount, reason, request):
 ## 6. 制作后取消
 
 ```text
-cancelAfterPreparation(orderId, request):
+cancelAfterPreparation(storeId, orderId, request):
   BEGIN
   claimIdempotency(...)
   order = SELECT * FROM orders WHERE id=orderId FOR UPDATE
+  assertStoreOwnership(tx, storeId, { orderId, staffId: actor.staffId })
   assert order.status == PREPARING
 
   // 库存已经在 CONSUME 时扣过，本次绝不修改 onHand/reserved。
@@ -295,6 +310,7 @@ cancelAfterPreparation(orderId, request):
       SUM(totalQuantity), weighted unit cost snapshot, SUM(totalCostSnapshot)
 
   for each loss in aggregated_loss:
+      assertStoreOwnership(tx, storeId, { orderId, orderItemId: loss.orderItemId, materialId: loss.materialId, staffId: actor.staffId })
       INSERT loss_records(
           materialId, orderId, orderItemId,
           quantity=loss.totalQuantity,
@@ -331,10 +347,12 @@ cancelAfterPreparation(orderId, request):
 ## 7. 分次收款
 
 ```text
-recordPayment(targetType, targetId, amountFen, request):
+recordPayment(storeId, targetType, targetId, amountFen, request):
   BEGIN
   claimIdempotency(...)
   assert amountFen > 0
+  paymentRefs = targetType == SESSION ? { sessionId: targetId } : { orderId: targetId }
+  assertStoreOwnership(tx, storeId, { ...paymentRefs, staffId: actor.staffId })
 
   if targetType == SESSION:
       session = SELECT * FROM dining_sessions WHERE id=targetId FOR UPDATE
@@ -370,10 +388,11 @@ recordPayment(targetType, targetId, amountFen, request):
 ## 8. 收款作废
 
 ```text
-voidPayment(paymentId, reason, request):
+voidPayment(storeId, paymentId, reason, request):
   BEGIN
   claimIdempotency(...)
   payment = SELECT * FROM payment_records WHERE id=paymentId FOR UPDATE
+  assertStoreOwnership(tx, storeId, { paymentId, staffId: actor.staffId })
   assert payment.status == ACTIVE
   activeRefundSum = sum RefundRecord WHERE paymentId=payment.id AND status=ACTIVE
   assert activeRefundSum == 0
@@ -392,12 +411,13 @@ voidPayment(paymentId, reason, request):
 ## 9. 实际退款登记
 
 ```text
-registerRefund(paymentId, amountFen, reason, request):
+registerRefund(storeId, paymentId, amountFen, reason, request):
   BEGIN
   claimIdempotency(...)
   assert amountFen > 0
 
   payment = SELECT * FROM payment_records WHERE id=paymentId FOR UPDATE
+  assertStoreOwnership(tx, storeId, { paymentId, staffId: actor.staffId })
   assert payment.status == ACTIVE
 
   refunded = SELECT COALESCE(SUM(amountFen),0)
@@ -418,10 +438,11 @@ registerRefund(paymentId, amountFen, reason, request):
 ## 10. 修改桌单优惠
 
 ```text
-changeDiscount(sessionId, newDiscountFen, reason, request):
+changeDiscount(storeId, sessionId, newDiscountFen, reason, request):
   BEGIN
   claimIdempotency(...)
   session = SELECT * FROM dining_sessions WHERE id=sessionId FOR UPDATE
+  assertStoreOwnership(tx, storeId, { sessionId, staffId: actor.staffId })
   assert session.status == OPEN
   assert request.expectedVersion == session.version
 
@@ -472,18 +493,20 @@ changeDiscount(sessionId, newDiscountFen, reason, request):
 ## 11. 关闭桌单
 
 ```text
-closeSession(sessionId, request):
+closeSession(storeId, sessionId, request):
   BEGIN
   claimIdempotency(...)
 
   sessionPreview = read DiningSession to get tableId
   table = SELECT * FROM dining_tables WHERE id=sessionPreview.tableId FOR UPDATE
   session = SELECT * FROM dining_sessions WHERE id=sessionId FOR UPDATE
+  assertStoreOwnership(tx, storeId, { tableId: session.tableId, sessionId, staffId: actor.staffId })
 
   assert session.status == OPEN
   assert table.activeSessionId == session.id
 
   orders = SELECT * FROM orders WHERE sessionId=session.id FOR UPDATE
+  for each order in orders: assertStoreOwnership(tx, storeId, { orderId: order.id, sessionId, staffId: actor.staffId })
   assert every order.status IN (COMPLETED, CANCELLED)
   assert no order.status IN (PENDING_ACCEPTANCE, ACCEPTED, PREPARING)
 
@@ -538,10 +561,3 @@ closeSession:
 
 - 若关闭先拿到锁：关闭完成后，新订单看到 `activeSessionId=NULL`，创建新的桌单。
 - 若新订单先拿到锁：新订单提交后，关闭事务必须重新检查该新订单，未完成则关闭失败。
-
-
-
-
-
-
-

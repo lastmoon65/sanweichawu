@@ -64,7 +64,9 @@
 | `app.js` | 工作台显示打包应收/实收/未结 |
 | `app.js` | 新增打包订单“登记收款”弹窗 |
 | `app.js` | 订单详情显示打包实收状态 |
-| `app.js` | 经营分析实收纳入手动 PaymentRecord |
+| `app.js` | 经营分析实收纳入手动 PaymentRecord，并扣除有效退款 |
+| `app.js` | 新增打包订单部分/全额退款交互，退款关联原 PaymentRecord |
+| `store.js` | 新增退款流水与累计退款上限校验，净实收重算 |
 | `bundle.js` | 已重新生成 |
 
 ## 6. 测试修订与结果
@@ -75,6 +77,9 @@
 | `tests/manual_payment.py` 完成不自动新增收款 | 通过 |
 | `tests/manual_payment.py` 已完成未付款仍保持未结 | 通过 |
 | `tests/manual_payment.py` 已收款不退款不能取消 | 通过 |
+| `tests/refund_flow.py` 部分退款 | 通过 |
+| `tests/refund_flow.py` 超额退款拒绝 | 通过 |
+| `tests/refund_flow.py` 全额退款后取消 | 通过 |
 | `tests/prototype_acceptance.py` | 通过 |
 | `tests/extended_acceptance.py` | 通过 |
 | `tests/edge_acceptance.py` | 通过 |
@@ -94,3 +99,19 @@
 5. BASE + MODIFIER 同材料取消后仅一条 LossRecord。
 6. 已关闭桌单退款后的经营报表口径。
 7. 优惠调整和取消订单的退款前后流程。
+
+
+
+## 8. 最后一轮 P1 修订
+
+| 项目 | 修改 |
+| --- | --- |
+| RecipeVersion 默认状态 | 从 ACTIVE 改为 DRAFT |
+| 配方触发器 | 新增 VariantRecipe / RecipeModifier INSERT 的 DRAFT-only 保护 |
+| 配方状态机 | ARCHIVED 不可重新激活，ACTIVE 不可回退 DRAFT |
+| Product/Category | 增加跨门店 INSERT/UPDATE 触发器；Category/Product 的 storeId 不可迁移 |
+| OrderItem/RecipeVersion | 增加同 Store、同 Product、同 Variant 归属校验；RecipeVersion variant/version 身份不可修改 |
+| StoreOwnershipService | 新增可执行参考实现，覆盖 category/product/variant/recipe/orderItem/payment/staff 关联 |
+| 原型退款 | 新增部分退款、全额退款、超额拦截、净实收和退款单列统计 |
+| 原型取消 | 仅当打包订单净实收归零后才允许取消 |
+| SQL 完整性 | 修复损坏的 `END$`，增加 DELIMITER/触发器重名检查 |`n| 测试 | 新增 `tests/refund_flow.py`、`tests/store_ownership_contract.mjs` 和 MySQL P1 约束脚本 |

@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'tea-house-prototype-v1';
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 const MATERIAL_SEED = [
   { id: 'm-dhp', name: '大红袍茶叶', stock: 2000, reserved: 0, unit: '克', warning: 300, price: 0.30 },
@@ -152,11 +152,11 @@ function createInitialState() {
   const products = clone(PRODUCT_SEED);
   const state = {
     schemaVersion: SCHEMA_VERSION,
-    meta: { createdAt: new Date().toISOString(), lastOrderSeq: 1000, lastSessionSeq: 100, lastSettlementSeq: 100, lastPaymentSeq: 100 },
+    meta: { createdAt: new Date().toISOString(), lastOrderSeq: 1000, lastSessionSeq: 100, lastSettlementSeq: 100, lastPaymentSeq: 100, lastRefundSeq: 100 },
     materials,
     products,
     tables: Array.from({ length: 8 }, (_, i) => ({ id: `T${String(i + 1).padStart(2, '0')}`, capacity: i % 3 === 0 ? 4 : 2 })),
-    sessions: [], orders: [], settlements: [], payments: [], inventoryTransactions: [],
+    sessions: [], orders: [], settlements: [], payments: [], refunds: [], inventoryTransactions: [],
     customer: { mode: 'dine', currentTableId: null, cart: [], recentOrderId: null, view: 'catalog', category: '全部' },
     ui: { view: 'customer' }
   };
@@ -231,4 +231,3 @@ function createInitialState() {
 }
 
 export { STORAGE_KEY, SCHEMA_VERSION, createInitialState, clone, localDateKey, money, makeSnapshot };
-

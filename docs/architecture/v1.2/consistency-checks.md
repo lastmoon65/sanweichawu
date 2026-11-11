@@ -29,6 +29,10 @@
 | I10 | 每个 Variant 最多一个 ACTIVE RecipeVersion | `recipe_versions.active_variant_guard` 生成列唯一 + DRAFT→ACTIVE 事务 |
 | I11 | 关闭桌单时优惠分摊合计严格等于桌单优惠 | 最大余数法 + 关闭前合计校验 + `DiscountAllocation.isFinal` |
 | I12 | 制作后取消不重复扣库存 | Cancel 只新增 LossRecord，不新增 StockMovement |
+| I13 | ACTIVE/ARCHIVED 配方明细不可新增或修改 | `trg_variant_recipe_immutable_bi/bu/bd` + `trg_recipe_modifier_immutable_bi/bu/bd` |
+| I14 | OrderItem 的 RecipeVersion 必须属于当前 Variant | `trg_order_item_store_bi` + StoreOwnershipService 参考实现 |
+| I15 | Product 的 Category 必须同店 | `trg_product_category_store_bi/bu` + StoreOwnershipService 参考实现 |
+| I16 | 门店/商品/规格/配方归属根不可事后迁移 | Category/Product/Variant/RecipeVersion identity 不可变触发器 |
 
 ## 3. 顾客订单越权检查
 

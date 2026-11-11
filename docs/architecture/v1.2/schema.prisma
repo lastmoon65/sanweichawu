@@ -293,7 +293,7 @@ model RecipeVersion {
   id               BigInt       @id @default(autoincrement())
   variantId        BigInt
   versionNo        Int
-  status           RecipeStatus @default(ACTIVE)
+  status           RecipeStatus @default(DRAFT)
   effectiveAt      DateTime     @default(now())
   createdByStaffId BigInt?
   createdAt        DateTime     @default(now())

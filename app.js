@@ -76,9 +76,11 @@ function productArt(product, compact = false) {
 }
 
 function takeawayPaymentSummary(order) {
-  const paid = store.getOrderPaid(order.id);
+  const grossPaid = store.getOrderPaid(order.id);
+  const refunded = store.getOrderRefunded(order.id);
+  const paid = Math.max(0, grossPaid - refunded);
   const due = Math.max(0, Number(order.subtotal || 0) - Number(order.discountFen || 0));
-  return { paid, due, unpaid: Math.max(0, due - paid) };
+  return { grossPaid, refunded, paid, due, unpaid: Math.max(0, due - paid) };
 }
 function statusPill(status) {
   return `<span class="status-pill ${statusClass[status] || ''}">${STATUS_LABEL[status] || status}</span>`;
@@ -268,9 +270,9 @@ function renderWorkbench() {
           <div class="order-card-accent"></div>
           <div class="order-card-head"><div class="order-location">${order.channel === 'takeaway' ? '<span class="takeaway-mark">袋</span><div><b>打包外带</b><small>独立订单</small></div>' : `<span class="table-mark">${esc(order.tableId)}</span><div><b>${esc(order.tableId)} 桌</b><small>桌单 ${esc(order.sessionId)}</small></div>`}</div>${statusPill(order.status)}</div>
           <div class="order-number-row"><span>${esc(order.orderNo)}</span><time>${fmtTime(order.createdAt)}</time></div>
-          ${cash ? `<div class="takeaway-pay-line"><span>应收 ${money(cash.due)} · 实收 ${money(cash.paid)}</span><b class="${cash.unpaid ? 'text-warn' : 'text-good'}">${cash.unpaid ? `未结 ${money(cash.unpaid)}` : '已收清'}</b></div>` : ''}
+          ${cash ? `<div class="takeaway-pay-line"><span>应收 ${money(cash.due)} · 净实收 ${money(cash.paid)}${cash.refunded ? ` · 已退 ${money(cash.refunded)}` : '' }</span><b class="${cash.unpaid ? 'text-warn' : 'text-good'}">${cash.unpaid ? `未结 ${money(cash.unpaid)}` : '已收清'}</b></div>` : ''}
           <div class="order-item-list">${order.items.map((item) => `<div class="order-item"><div class="item-qty">×${item.quantity}</div><div class="item-main"><b>${esc(item.productName)}</b><span>${esc(item.variantName)} · ${esc(item.options?.strength || '')}<em>${esc(item.options?.method || '')}</em></span>${item.options?.note ? `<small class="item-note">备注：${esc(item.options.note)}</small>` : ''}</div><strong>${money(item.subtotal)}</strong></div>`).join('')}</div>
-          <div class="order-card-foot"><div><span class="muted-label">订单金额</span><b>${money(order.subtotal)}</b></div><div class="order-actions">${cash && cash.unpaid > 0 && order.status !== 'cancelled' ? `<button class="soft-btn small" data-action="open-takeaway-payment" data-order-id="${order.id}">登记收款</button>` : ''}${action ? `<button class="primary-btn small" data-action="advance-order" data-order-id="${order.id}" data-next="${action[0]}">${action[1]}</button>` : `<button class="soft-btn small" data-action="open-order-detail" data-order-id="${order.id}">查看详情</button>`}${!['completed', 'cancelled'].includes(order.status) ? `<button class="ghost-btn danger small" data-action="open-cancel-order" data-order-id="${order.id}">取消</button>` : ''}</div></div>
+          <div class="order-card-foot"><div><span class="muted-label">订单金额</span><b>${money(order.subtotal)}</b></div><div class="order-actions">${cash && (cash.grossPaid > 0 || cash.unpaid > 0) && order.status !== 'cancelled' ? `<button class="soft-btn small" data-action="open-takeaway-payment" data-order-id="${order.id}">${cash.unpaid > 0 ? '收款/退款' : '收款记录'}</button>` : ''}${action ? `<button class="primary-btn small" data-action="advance-order" data-order-id="${order.id}" data-next="${action[0]}">${action[1]}</button>` : `<button class="soft-btn small" data-action="open-order-detail" data-order-id="${order.id}">查看详情</button>`}${!['completed', 'cancelled'].includes(order.status) ? `<button class="ghost-btn danger small" data-action="open-cancel-order" data-order-id="${order.id}">取消</button>` : ''}</div></div>
           ${order.status === 'cancelled' && order.lossCost > 0 ? `<div class="loss-strip">制作后取消 · 材料损耗 ${money(order.lossCost)} 已单独记录</div>` : ''}
         </article>`;
       }).join('')}
@@ -389,7 +391,7 @@ function getAnalytics() {
   const orders = allToday.filter((o) => o.status !== 'cancelled');
   const sales = orders.reduce((sum, o) => sum + Number(o.subtotal || 0), 0);
   const sessionIds = new Set(orders.filter((o) => o.sessionId).map((o) => o.sessionId));
-  const orderIds = new Set(orders.map((o) => o.id));
+  const orderIds = new Set(allToday.map((o) => o.id));
   const settlements = store.state.settlements.filter((s) => {
     if (s.sessionId) return sessionIds.has(s.sessionId);
     if (s.orderId) return orderIds.has(s.orderId);
@@ -397,8 +399,11 @@ function getAnalytics() {
   });
   const discount = settlements.reduce((sum, s) => sum + Number(s.discount || 0), 0);
   const takeawayPayments = (store.state.payments || []).filter((p) => orderIds.has(p.orderId) && p.status === 'ACTIVE');
+  const takeawayPaymentIds = new Set(takeawayPayments.map((p) => p.id));
+  const refundTotal = (store.state.refunds || []).filter((r) => takeawayPaymentIds.has(r.paymentId) && r.status === 'ACTIVE').reduce((sum, r) => sum + Number(r.amount || 0), 0);
   const paid = settlements.reduce((sum, s) => sum + Number(s.paid || 0), 0)
-    + takeawayPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    + takeawayPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0)
+    - refundTotal;
   const actualReceivable = Math.max(0, sales - discount);
   const unpaid = Math.max(0, actualReceivable - paid);
   const lossOrders = allToday.filter((o) => o.status === 'cancelled' && Number(o.lossCost) > 0);
@@ -458,7 +463,7 @@ function getAnalytics() {
   const hours = Array.from({ length: 11 }, (_, i) => i + 9);
   const recentStockChanges = [...store.state.inventoryTransactions].sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 4);
   return {
-    recentStockChanges, today, orders, allToday, sales, discount, paid, unpaid, actualReceivable, loss, settlements,
+    recentStockChanges, today, orders, allToday, sales, discount, paid, unpaid, actualReceivable, refundTotal, loss, settlements,
     productRows, productRevenueRank: [...productRows].sort((a, b) => b.net - a.net), productGrossRank: [...productRows].sort((a, b) => b.gross - a.gross), productMarginRank: [...productRows].filter((p) => p.net > 0).sort((a, b) => b.rate - a.rate),
     consumptionRows, tableRows, dineCount: orders.filter((o) => o.channel === 'dine').length, takeawayCount: orders.filter((o) => o.channel === 'takeaway').length,
     hours: hours.map((hour) => ({ hour, value: hourMap.get(hour) || 0 }))
@@ -495,7 +500,7 @@ function renderAnalytics() {
       <div class="metric-card"><span>商品销售额</span><strong>${money(a.sales)}</strong><small>按订单快照汇总</small></div>
       <div class="metric-card warm"><span>今日优惠</span><strong>${money(a.discount)}</strong><small>来自桌单结账记录</small></div>
       <div class="metric-card green"><span>实际应收</span><strong>${money(a.actualReceivable)}</strong><small>销售额 − 优惠金额</small></div>
-      <div class="metric-card"><span>实收记录</span><strong>${money(a.paid)}</strong><small>线下人工登记金额</small></div>
+      <div class="metric-card"><span>净实收</span><strong>${money(a.paid)}</strong><small>收款减退款${a.refundTotal ? ` · 已退 ${money(a.refundTotal)}` : '' }</small></div>
       <div class="metric-card ${a.unpaid > 0 ? 'warm' : ''}"><span>未结金额</span><strong>${money(a.unpaid)}</strong><small>${a.unpaid > 0 ? '仍有桌单或订单未结清' : '当前全部结清'}</small></div>
     </div>
     <div class="dashboard-grid">
@@ -503,7 +508,7 @@ function renderAnalytics() {
         <div class="panel-head"><div><span class="eyebrow">REVENUE RHYTHM</span><h2>今日营业节奏</h2></div><span class="panel-highlight">峰值 ${money(Math.max(...a.hours.map((h) => h.value)))}</span></div>
         <div class="revenue-hero"><div><span>实际应收</span><b>${money(a.actualReceivable)}</b><small>材料毛利预计 <strong>${money(a.productRows.reduce((sum, p) => sum + p.gross, 0))}</strong></small></div><div class="channel-donut" style="--dine:${dinePct}%"><div><b>${dinePct}%</b><span>堂饮占比</span></div></div></div>
         <div class="hour-chart">${a.hours.map((h) => `<div class="hour-column"><span class="bar" style="height:${Math.max(4, (h.value / maxHour) * 100)}%" data-value="${money(h.value)}"></span><small>${h.hour}:00</small></div>`).join('')}</div>
-        <div class="chart-legend"><span><i class="legend-dine"></i>堂饮 ${a.dineCount} 笔</span><span><i class="legend-takeaway"></i>打包 ${a.takeawayCount} 笔</span><span><i class="legend-loss"></i>取消损耗 ${money(a.loss)}</span></div>
+        <div class="chart-legend"><span><i class="legend-dine"></i>堂饮 ${a.dineCount} 笔</span><span><i class="legend-takeaway"></i>打包 ${a.takeawayCount} 笔</span><span><i class="legend-loss"></i>取消损耗 ${money(a.loss)}</span><span><i class="legend-refund"></i>退款 ${money(a.refundTotal)}</span></div>
       </div>
       <div class="panel-card ranking-panel">
         <div class="panel-head"><div><span class="eyebrow">PRODUCT RANKING</span><h2>商品多维排行</h2></div><button class="text-btn" data-view="inventory">管理配方 →</button></div>
@@ -529,7 +534,7 @@ function renderAnalytics() {
       </div>
       <div class="panel-card insight-panel"><span class="eyebrow">TODAY'S SIGNAL</span><h2>${esc(bestGross.name)} 贡献了最高材料毛利</h2><p>预计材料毛利 <b>${money(bestGross.gross)}</b>，毛利率 <b>${bestGross.rate.toFixed(1)}%</b>。该数值不包含房租、人工与水电。</p><div class="insight-rule"></div><p class="muted-copy">取消但已制作订单的材料成本已计入损耗 <b>${money(a.loss)}</b>，未混入正常毛利。</p></div>
     </div>
-    <div class="data-note"><span>数据口径</span><p>销售额按订单快照计算；优惠只来自桌单结账记录，并按订单金额占比分摊到商品毛利；已制作后取消的订单不计销售，其材料成本进入损耗。打包订单制作完成不会自动登记实收；店员在实际收到钱后手动登记，未完成制作前也可以登记。</p></div>
+    <div class="data-note"><span>数据口径</span><p>销售额按订单快照计算；优惠只来自桌单结账记录，并按订单金额占比分摊到商品毛利；已制作后取消的订单不计销售，其材料成本进入损耗。打包订单制作完成不会自动登记实收；店员在实际收到钱后手动登记，退款必须关联原收款并冲减净实收。</p></div>
   </section>`;
 }
 
@@ -547,6 +552,7 @@ function renderModal() {
   else if (type === 'cart') root.innerHTML = renderCartModal();
   else if (type === 'order-detail') root.innerHTML = renderOrderDetailModal(ui.modal.orderId);
   else if (type === 'takeaway-payment') root.innerHTML = renderTakeawayPaymentModal(ui.modal.orderId);
+  else if (type === 'takeaway-refund') root.innerHTML = renderTakeawayRefundModal(ui.modal.paymentId);
   else if (type === 'table') root.innerHTML = renderTableModal(ui.modal.tableId);
   else if (type === 'cancel-order') root.innerHTML = renderCancelOrderModal(ui.modal.orderId);
   else if (type === 'product-form') root.innerHTML = renderProductFormModal();
@@ -607,12 +613,35 @@ function renderTakeawayPaymentModal(orderId) {
   const order = store.getOrder(orderId);
   if (!order || order.channel !== 'takeaway') return '';
   const cash = takeawayPaymentSummary(order);
-  return modalShell(`登记收款 · ${order.orderNo}`, 'MANUAL CASH RECORD', `<form class="compact-form" data-form="takeaway-payment" data-order-id="${order.id}">
-    <div class="stock-current-card"><span>当前已登记实收</span><b>${money(cash.paid)}</b><small>订单应收 ${money(cash.due)} · 未结 ${money(cash.unpaid)}</small></div>
-    <label><span>本次实收金额</span><input class="text-input" name="amount" type="number" min="0.01" max="${cash.unpaid}" step="0.01" value="${cash.unpaid.toFixed(2)}" required></label>
-    <label><span>收款备注</span><input class="text-input" name="note" placeholder="例如：现金收款、顾客已扫码给店员"></label>
-    <div class="info-box">这里只登记店员确认已经收到的钱。系统不连接在线支付，也不会自动判断支付成功。打包订单可以在制作完成前登记实收。</div>
-    <div class="form-actions"><button type="button" class="soft-btn" data-action="close-modal">取消</button><button type="submit" class="primary-btn">确认登记实收</button></div>
+  const payments = (store.state.payments || []).filter((p) => p.orderId === order.id && p.status === 'ACTIVE');
+  return modalShell(`收款与退款 · ${order.orderNo}`, 'MANUAL CASH RECORD', `<div class="payment-records-panel">
+    <div class="stock-current-card"><span>当前净实收</span><b>${money(cash.paid)}</b><small>订单应收 ${money(cash.due)} · 已退 ${money(cash.refunded)} · 未结 ${money(cash.unpaid)}</small></div>
+    <div class="payment-record-list">${payments.length ? payments.map((p) => {
+      const refunded = store.getPaymentRefunded(p.id);
+      const refundable = Math.max(0, Number(p.amount) - refunded);
+      return `<div class="payment-record-row"><div><b>${esc(p.paymentNo)}</b><span>${fmtDateTime(p.receivedAt)} · 收款 ${money(p.amount)} · 已退 ${money(refunded)}</span></div><button class="soft-btn small" data-action="open-takeaway-refund" data-payment-id="${p.id}" ${refundable <= 0 ? 'disabled' : ''}>${refundable > 0 ? '登记退款' : '已退完'}</button></div>`;
+    }).join('') : '<p class="muted-copy">尚未登记收款。</p>'}</div>
+    ${cash.unpaid > 0 && order.status !== 'cancelled' ? `<form class="compact-form payment-add-form" data-form="takeaway-payment" data-order-id="${order.id}">
+      <div class="form-section-title"><div><b>新增实收</b><small>系统不验证真实资金到账</small></div></div>
+      <label><span>本次实收金额</span><input class="text-input" name="amount" type="number" min="0.01" max="${cash.unpaid}" step="0.01" value="${cash.unpaid.toFixed(2)}" required></label>
+      <label><span>收款备注</span><input class="text-input" name="note" placeholder="例如：现金收款、顾客已扫码给店员"></label>
+      <div class="form-actions"><button type="button" class="soft-btn" data-action="close-modal">关闭</button><button type="submit" class="primary-btn">确认登记实收</button></div>
+    </form>` : '<p class="modal-fineprint">该订单当前没有待登记实收。</p>'}
+  </div>`);
+}
+
+function renderTakeawayRefundModal(paymentId) {
+  const payment = (store.state.payments || []).find((p) => p.id === paymentId && p.status === 'ACTIVE');
+  if (!payment) return '';
+  const refunded = store.getPaymentRefunded(payment.id);
+  const refundable = Math.max(0, Number(payment.amount) - refunded);
+  const order = store.getOrder(payment.orderId);
+  return modalShell(`登记退款 · ${payment.paymentNo}`, 'MANUAL REFUND RECORD', `<form class="compact-form" data-form="takeaway-refund" data-payment-id="${payment.id}">
+    <div class="stock-current-card"><span>原收款剩余可退</span><b>${money(refundable)}</b><small>${order?.orderNo || ''} · 原收款 ${money(payment.amount)} · 已退 ${money(refunded)}</small></div>
+    <label><span>本次退款金额</span><input class="text-input" name="amount" type="number" min="0.01" max="${refundable}" step="0.01" value="${refundable.toFixed(2)}" required></label>
+    <label><span>退款原因</span><input class="text-input" name="reason" required placeholder="例如：顾客取消订单"></label>
+    <div class="warning-box">退款必须关联原收款；累计退款不能超过原收款。原收款记录不会被修改或删除。</div>
+    <div class="form-actions"><button type="button" class="soft-btn" data-action="back-payment-records" data-order-id="${order?.id || ''}">返回收款记录</button><button type="submit" class="danger-btn">确认登记退款</button></div>
   </form>`);
 }
 function renderOrderDetailModal(orderId) {
@@ -805,6 +834,8 @@ function handleClick(event) {
   }
   if (action === 'open-order-detail') { ui.modal = { type: 'order-detail', orderId: el.dataset.orderId }; return renderApp(); }
   if (action === 'open-takeaway-payment') { ui.modal = { type: 'takeaway-payment', orderId: el.dataset.orderId }; return renderApp(); }
+  if (action === 'open-takeaway-refund') { ui.modal = { type: 'takeaway-refund', paymentId: el.dataset.paymentId }; return renderApp(); }
+  if (action === 'back-payment-records') { ui.modal = { type: 'takeaway-payment', orderId: el.dataset.orderId }; return renderApp(); }
   if (action === 'ranking-metric') { ui.rankingMetric = el.dataset.metric; return renderApp(); }
   if (action === 'work-filter') { ui.workFilter = el.dataset.filter; return renderApp(); }
   if (action === 'advance-order') {
@@ -963,6 +994,13 @@ function handleSubmit(event) {
     ui.modal = null; notify(form.dataset.moveType === 'adjust' ? '库存已调整' : '入库完成，商品可售状态已刷新', 'success'); return renderApp();
   }
 
+  if (type === 'takeaway-refund') {
+    const result = store.recordRefund(form.dataset.paymentId, form.elements.amount.value, form.elements.reason.value.trim());
+    if (!result.ok) return notify(result.message, 'error');
+    ui.modal = { type: 'takeaway-payment', orderId: store.state.payments.find((p) => p.id === form.dataset.paymentId)?.orderId };
+    notify('退款已登记，原收款记录保持不变', 'success');
+    return renderApp();
+  }
   if (type === 'takeaway-payment') {
     const result = store.recordTakeawayPayment(form.dataset.orderId, form.elements.amount.value, form.elements.note.value.trim());
     if (!result.ok) return notify(result.message, 'error');
@@ -1004,15 +1042,3 @@ document.addEventListener('submit', handleSubmit);
 document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && ui.modal) closeModal(); });
 store.subscribe(renderApp);
 renderApp();
-
-
-
-
-
-
-
-
-
-
-
-

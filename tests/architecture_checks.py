@@ -57,3 +57,62 @@ print('PASS: confirmed business decisions reflected in review report')
 
 
 
+
+for needle in [
+    'trg_recipe_version_initial_draft_bi',
+    'trg_recipe_version_status_bu',
+    'trg_variant_recipe_immutable_bi',
+    'trg_recipe_modifier_immutable_bi',
+    'trg_product_category_store_bi',
+    'trg_order_item_store_bi'
+]:
+    assert needle in sql, needle
+assert re.search(r'status\s+RecipeStatus\s+@default\(DRAFT\)', schema)
+assert 'recordRefund' in store
+refund_test = (root / 'tests/refund_flow.py').read_text(encoding='utf-8')
+assert 'partial refund' in refund_test and 'full refund' in refund_test
+print('PASS: final P1 recipe, ownership and refund guards present')
+
+
+
+# Structural validation for DELIMITER blocks and trigger identity.
+start_count = len(re.findall(r'(?m)^DELIMITER \$\$\s*$', sql))
+end_count = len(re.findall(r'(?m)^DELIMITER ;\s*$', sql))
+assert start_count == end_count, (start_count, end_count)
+trigger_names = re.findall(r'(?m)^CREATE TRIGGER `([^`]+)`', sql)
+assert len(trigger_names) == len(set(trigger_names)), 'duplicate trigger name'
+assert not re.search(r'(?m)^END\$\s*$', sql), 'corrupted END$ delimiter'
+for needle in [
+    'trg_category_store_immutable_bu',
+    'trg_product_store_immutable_bu',
+    'trg_variant_product_immutable_bu',
+    'trg_recipe_version_identity_bu',
+    'trg_refund_record_limit_bi'
+]:
+    assert needle in trigger_names, needle
+print('PASS: SQL delimiter blocks and trigger names are structurally consistent')
+
+reference = (root / 'docs/architecture/v1.2/reference/store-ownership.mjs').read_text(encoding='utf-8')
+assert 'export async function assertStoreOwnership' in reference
+for field in [
+    'tableId', 'sessionId', 'orderId', 'orderItemId', 'categoryId', 'productId',
+    'variantId', 'recipeVersionId', 'materialId', 'paymentId', 'staffId'
+]:
+    assert field in reference, field
+for transaction_needle in [
+    'startPreparation(storeId, orderId, request)',
+    'adjustStock(storeId, materialId, physicalCount, reason, request)',
+    'cancelAfterPreparation(storeId, orderId, request)',
+    'recordPayment(storeId, targetType, targetId, amountFen, request)',
+    'voidPayment(storeId, paymentId, reason, request)',
+    'registerRefund(storeId, paymentId, amountFen, reason, request)',
+    'changeDiscount(storeId, sessionId, newDiscountFen, reason, request)',
+    'closeSession(storeId, sessionId, request)',
+    'for each order in orders: assertStoreOwnership'
+]:
+    assert transaction_needle in tx, transaction_needle
+print('PASS: executable ownership contract and transaction call sites are present')
+
+ddl = (root / 'docs/architecture/v1.2/generated-mysql-ddl.sql').read_text(encoding='utf-8')
+assert re.search(r"`status` ENUM\('DRAFT', 'ACTIVE', 'ARCHIVED'\) NOT NULL DEFAULT 'DRAFT'", ddl)
+print('PASS: generated MySQL DDL defaults RecipeVersion to DRAFT')

@@ -147,6 +147,7 @@ python tests/extended_acceptance.py
 python tests/edge_acceptance.py
 python tests/interaction_checks.py
 python tests/manual_payment.py
+python tests/refund_flow.py
 python tests/architecture_checks.py
 ```
 
@@ -156,6 +157,7 @@ python tests/architecture_checks.py
 
 - 并发是浏览器内 JavaScript 原子操作模拟，不能替代真实后端事务、数据库锁和分布式并发验证。
 - 打包订单只有在店员手动登记后才计入实收；制作完成不会自动收款，且允许制作前先登记实际收款。
+- 原型退款闭环目前覆盖打包订单的 PaymentRecord；堂饮桌单仍使用简化结算模型，不作为正式多收款/退款闭环的验收。
 - 商品图片使用内置 SVG 插画与主题色模拟，未提供图片上传。
 - 利润为材料毛利，不是净利润。
 - 浏览器清理站点数据会清除原型数据。
@@ -179,6 +181,7 @@ python tests/architecture_checks.py
 - [一致性检查](docs/architecture/v1.2/consistency-checks.md)
 - [审查报告](docs/architecture/v1.2/review-report.md)
 - [跨门店一致性](docs/architecture/v1.2/store-integrity.md)
+- [可执行归属校验参考实现](docs/architecture/v1.2/reference/store-ownership.mjs)
 
 
 
@@ -186,4 +189,3 @@ python tests/architecture_checks.py
 - [关键测试案例](docs/architecture/v1.2/test-cases-v1.2.md)
 - [修订清单](docs/architecture/v1.2/change-log-v1.2.md)
 - [验证证据](docs/architecture/v1.2/verification-evidence.md)
-

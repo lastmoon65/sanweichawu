@@ -14,6 +14,7 @@
 10. [验证证据](./verification-evidence.md)
 11. [MySQL 补充约束](./constraints.sql)
 12. [由 Prisma 生成的 MySQL 基线 DDL](./generated-mysql-ddl.sql)
+13. [可执行门店归属校验参考实现](./reference/store-ownership.mjs)
 ## 设计范围
 
 模型覆盖 27 个 Prisma 实体：
@@ -54,15 +55,4 @@ Prisma Schema 无法完整表达以下跨行/跨表规则，因此补充了 `con
 
 ## 当前状态
 
-这是设计基线，不是可直接上线的业务实现。正式开发前先处理 `review-report.md` 中 P0 业务确认项。
-
-
-
-
-
-
-
-
-
-
-
+这是设计基线，不是可直接上线的业务实现。最后一轮 P1 已完成结构和原型修订；正式开发前必须先在有 MySQL 8 的环境执行全部 DDL、constraints.sql、约束脚本和并发验收。

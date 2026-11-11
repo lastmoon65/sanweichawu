@@ -330,7 +330,7 @@ export class TeaStore {
       order.completedAt = now;
     }
     if (nextStatus === 'cancelled') {
-      if (order.channel === 'takeaway' && this.getOrderPaid(order.id) > 0) return { ok: false, message: '该打包订单已有实收记录，请先登记退款后再取消' };
+      if (order.channel === 'takeaway' && this.getOrderNetPaid(order.id) > 0) return { ok: false, message: '该打包订单已有实收记录，请先登记退款后再取消' };
       if (order.sessionId) {
         const current = this.getSessionMoney(order.sessionId);
         const remainingSubtotal = Math.max(0, current.subtotal - order.subtotal);
@@ -379,13 +379,52 @@ export class TeaStore {
       .reduce((sum, p) => sum + Number(p.amount || 0), 0);
   }
 
+  getPaymentRefunded(paymentId) {
+    return (this.state.refunds || [])
+      .filter((r) => r.paymentId === paymentId && r.status === 'ACTIVE')
+      .reduce((sum, r) => sum + Number(r.amount || 0), 0);
+  }
+
+  getOrderRefunded(orderId) {
+    const paymentIds = new Set((this.state.payments || []).filter((p) => p.orderId === orderId).map((p) => p.id));
+    return (this.state.refunds || [])
+      .filter((r) => paymentIds.has(r.paymentId) && r.status === 'ACTIVE')
+      .reduce((sum, r) => sum + Number(r.amount || 0), 0);
+  }
+
+  getOrderNetPaid(orderId) {
+    return Math.max(0, this.getOrderPaid(orderId) - this.getOrderRefunded(orderId));
+  }
+
+  recordRefund(paymentId, amount, reason) {
+    const payment = (this.state.payments || []).find((p) => p.id === paymentId && p.status === 'ACTIVE');
+    if (!payment) return { ok: false, message: '原收款记录不存在或已作废' };
+    const value = Number(amount || 0);
+    if (!Number.isFinite(value) || value <= 0) return { ok: false, message: '请输入有效退款金额' };
+    const refunded = this.getPaymentRefunded(payment.id);
+    if (refunded + value > Number(payment.amount) + 0.0001) return { ok: false, message: `累计退款不能超过原收款，剩余可退 ${money(Number(payment.amount) - refunded)}` };
+    this.state.refunds = this.state.refunds || [];
+    this.state.refunds.unshift({
+      id: `REF${++this.state.meta.lastRefundSeq}`,
+      refundNo: `REF-${String(this.state.meta.lastRefundSeq).slice(-5)}`,
+      paymentId: payment.id,
+      orderId: payment.orderId || null,
+      sessionId: payment.sessionId || null,
+      amount: value,
+      reason,
+      status: 'ACTIVE',
+      refundedAt: new Date().toISOString()
+    });
+    this.save();
+    return { ok: true };
+  }
   recordTakeawayPayment(orderId, amount, note = '') {
     const order = this.getOrder(orderId);
     if (!order || order.channel !== 'takeaway') return { ok: false, message: '打包订单不存在' };
     if (order.status === 'cancelled') return { ok: false, message: '已取消订单不能登记收款' };
     const value = Number(amount || 0);
     if (!Number.isFinite(value) || value <= 0) return { ok: false, message: '请输入有效收款金额' };
-    const paid = this.getOrderPaid(order.id);
+    const paid = this.getOrderNetPaid(order.id);
     const due = Math.max(0, Number(order.subtotal || 0) - Number(order.discountFen || 0));
     if (paid + value > due + 0.0001) return { ok: false, message: `本次收款超过未结金额 ${money(due - paid)}` };
     const now = new Date().toISOString();
@@ -519,8 +558,3 @@ export class TeaStore {
 }
 
 export { STATUS_LABEL, TX_LABEL, localDateKey };
-
-
-
-
-

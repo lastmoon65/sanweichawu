@@ -147,8 +147,9 @@ HAVING o.subtotalFen <> SUM(oi.lineSubtotalFen);
 8. 优惠分摊总和严格等于桌单优惠。
 9. 关闭桌单时所有订单终态且未结为 0。
 10. 顾客订单查询归属。
+11. ACTIVE/ARCHIVED 配方明细禁止 INSERT/UPDATE/DELETE。
+12. RecipeVersion 只能 DRAFT → ACTIVE → ARCHIVED 单向流转。
+13. OrderItem.recipeVersionId 必须属于 OrderItem.variantId。
+14. Product.categoryId 必须属于 Product.storeId，且归属根字段不可迁移。
 
 不能把 `constraints.sql` 中的触发器当装饰：CI 必须在真实 MySQL 8 上执行迁移、触发器和并发用例。
-
-
-

@@ -371,7 +371,12 @@ h1, h2, h3, .brand-name { font-family: "Songti SC", "STSong", "SimSun", "Noto Se
 .hour-column .bar:hover { opacity: 1; }.hour-column .bar:hover::after { content: attr(data-value); position: absolute; bottom: calc(100% + 5px); left: 50%; transform: translateX(-50%); background: var(--ink); color: white; padding: 4px 6px; border-radius: 4px; font-size: 7px; white-space: nowrap; }
 .hour-column small { color: var(--muted); font-size: 7px; }
 .chart-legend { display: flex; gap: 18px; flex-wrap: wrap; border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px; color: var(--muted); font-size: 8px; }
-.chart-legend span { display: flex; align-items: center; gap: 6px; }.chart-legend i { width: 7px; height: 7px; border-radius: 50%; }.legend-dine { background: var(--green); }.legend-takeaway { background: var(--wood-soft); }.legend-loss { background: var(--danger); }
+.chart-legend span { display: flex; align-items: center; gap: 6px; }.chart-legend i { width: 7px; height: 7px; border-radius: 50%; }.payment-records-panel { display:flex; flex-direction:column; gap:14px; }
+.payment-record-list { border:1px solid var(--line); border-radius:13px; padding:3px 13px; }
+.payment-record-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid rgba(38,61,48,.075); }.payment-record-row:last-child { border-bottom:0; }
+.payment-record-row b { display:block; font-size:10px; }.payment-record-row span { display:block; margin-top:3px; color:var(--muted); font-size:8px; }
+.payment-add-form { padding-top:2px; }
+.legend-refund { background:#b66a58; }.legend-dine { background: var(--green); }.legend-takeaway { background: var(--wood-soft); }.legend-loss { background: var(--danger); }
 .rank-switch { display: flex; gap: 3px; padding: 3px; border-radius: 999px; background: var(--surface-soft); margin-bottom: 8px; }
 .rank-switch button { flex: 1; border: 0; border-radius: 999px; background: transparent; color: var(--muted); padding: 6px 5px; font-size: 8px; }.rank-switch button.active { background: var(--green); color: white; }.rank-list { display: flex; flex-direction: column; }
 .rank-row { display: grid; grid-template-columns: 24px 1fr auto; gap: 10px; align-items: center; padding: 11px 0; border-bottom: 1px solid rgba(38,61,48,.08); }
@@ -516,8 +521,3 @@ h1, h2, h3, .brand-name { font-family: "Songti SC", "STSong", "SimSun", "Noto Se
   .table-grid-mini { grid-template-columns: repeat(4, 1fr); gap: 6px; }.scan-table-card b { font-size: 17px; }
   .orders-heading { flex-direction: column; }
 }
-
-
-
-
-

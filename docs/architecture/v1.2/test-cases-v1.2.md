@@ -14,27 +14,38 @@
 | P-02 | 打包制作前可收款 | 创建未完成打包订单，点击登记收款并填写合法金额 | 创建一条 ACTIVE PaymentRecord | 自动化通过 |
 | P-03 | 已完成未付款仍可收款 | 完成打包订单但不登记收款，之后再登记 | 允许登记，和完成状态无关 | 自动化通过 |
 | P-04 | 已收打包订单取消 | 登记实收后直接取消 | 拒绝取消，要求先退款 | 自动化通过 |
-| P-05 | 退款后可取消 | 登记退款后取消订单 | 允许取消 | 未实现完整退款 UI，未验证 |
+| P-05 | 部分/全额退款后可取消 | 先部分退款，再退清余款，然后取消订单 | 部分退款时仍拒绝取消；退清后允许取消 | 自动化通过 |
+| P-05b | 超额退款 | 本次退款超过原收款剩余可退金额 | 拒绝，不新增退款记录 | 自动化通过 |
+| P-05c | 退款后报表口径 | 部分退款后检查净实收；退清并取消后检查退款单列统计 | 净实收等于有效收款减退款；取消订单的退款仍显示在当日退款统计 | 自动化通过 |
 | P-06 | 优惠导致超收 | 已收款后把优惠调整到净实收以上 | 拒绝修改并提示先退款 | 未实现完整桌单分次收款 UI，未验证 |
 | P-07 | BASE + MODIFIER 同材料损耗 | 制作含基础与选项追加的茶品后取消 | 按 orderItemId + materialId 合并为一条 LossRecord | 正式模型未实现，未验证 |
 | P-08 | 多材料预占一处失败 | 第一项材料成功、第二项库存不足 | 整个事务回滚，无部分预占 | 正式模型未实现，未验证 |
 | P-09 | 同桌同时首单 | 两连接同时提交 T01 首单 | 仅产生一张 OPEN session | 正式模型未实现，未验证 |
 
-## B. Schema / SQL 静态检查
+## B. Schema / SQL / 服务契约检查
 
 | 编号 | 场景 | 预期 | 当前状态 |
 | --- | --- | --- | --- |
 | S-01 | Prisma format | 无格式错误 | 通过 |
 | S-02 | Prisma validate | 无 P1012 校验错误 | 通过 |
-| S-03 | RecipeStatus | 包含 DRAFT / ACTIVE / ARCHIVED | 通过 |
+| S-03 | RecipeStatus | 包含 DRAFT / ACTIVE / ARCHIVED，默认 DRAFT | 通过 |
 | S-04 | LossRecord 唯一 | `(orderItemId, materialId)` 唯一 | 通过 |
-| S-05 | Payment 目标 XOR | `sessionId` 与 `orderId` 必须且只能一个 | SQL CHECK 已写，未在 MySQL 执行 |
-| S-06 | 活动桌单唯一 | 生成列 `open_table_guard` 唯一 | SQL 已写，未在 MySQL 执行 |
-| S-07 | 活动配方唯一 | 生成列 `active_variant_guard` 唯一 | SQL 已写，未在 MySQL 执行 |
-| S-08 | 退款不超原收款 | PaymentRecord 锁 + 触发器 | SQL 已写，未在 MySQL 执行 |
-| S-09 | append-only 事实表 | 更新/删除被触发器拒绝 | SQL 已写，未在 MySQL 执行 |
-| S-10 | 跨门店归属 | 核心关系有触发器或服务事务清单 | 设计清单通过，MySQL 未验证 |
+| S-05 | Payment 目标 XOR | `sessionId` 与 `orderId` 必须且只能一个 | SQL CHECK 已写，MySQL 未验证 |
+| S-06 | 活动桌单唯一 | 生成列 `open_table_guard` 唯一 | SQL 已写，MySQL 未验证 |
+| S-07 | 活动配方唯一 | 生成列 `active_variant_guard` 唯一 | SQL 已写，MySQL 未验证 |
+| S-08 | 退款不超原收款 | PaymentRecord 锁 + 触发器 | SQL 已写，MySQL 未验证 |
+| S-09 | append-only 事实表 | 更新/删除被触发器拒绝 | SQL 已写，MySQL 未验证 |
+| S-10 | 跨门店归属 | 核心关系有触发器或服务事务清单 | 设计和服务契约通过，MySQL 未验证 |
+| S-11 | ACTIVE/ARCHIVED 配方明细 INSERT | 直接插入 VariantRecipe / RecipeModifier 必须失败 | 测试脚本已提供，MySQL 未验证 |
+| S-12 | ARCHIVED 配方重新激活 | 状态更新必须失败 | 测试脚本已提供，MySQL 未验证 |
+| S-13 | Product 跨店 Category | 插入/更新必须失败 | 测试脚本已提供，MySQL 未验证 |
+| S-14 | OrderItem 使用其他规格 RecipeVersion | 插入必须失败 | 测试脚本已提供，MySQL 未验证 |
+| S-15 | 归属根字段迁店/换父 | Category/Product/Variant/RecipeVersion 的归属根不可修改 | 测试脚本已提供，MySQL 未验证 |
+| S-16 | 服务层归属参考实现 | 跨店分类、错规格配方、错订单项组分、DRAFT 配方下单、错员工门店均被拒绝 | Node 单测通过 |
+| S-17 | SQL 结构完整性 | DELIMITER 配对、触发器不重名、不存在损坏的 `END$` | 静态检查通过 |
+| S-18 | 生成 DDL | MySQL DDL 中 RecipeVersion 默认值为 DRAFT | 通过 |
 
+MySQL 约束测试脚本：`tests/mysql/run_p1_constraint_tests.ps1`；fixture：`tests/mysql/p1_fixture.sql`。当前主机没有 MySQL 客户端、MySQL 服务和可用 Docker daemon，因此脚本尚未实际运行。
 ## C. 必须补做的 MySQL 8 并发验收
 
 执行环境必须使用真实 MySQL 8，推荐 20 个独立连接、事务隔离级别按实现配置。
@@ -68,4 +79,3 @@
 - 事务隔离级别与锁等待日志。
 - 自动化测试报告。
 - 失败请求的 HTTP 状态与错误码。
-
