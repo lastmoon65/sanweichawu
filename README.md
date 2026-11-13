@@ -191,3 +191,13 @@ python tests/architecture_checks.py
 - [关键测试案例](docs/architecture/v1.2/test-cases-v1.2.md)
 - [修订清单](docs/architecture/v1.2/change-log-v1.2.md)
 - [验证证据](docs/architecture/v1.2/verification-evidence.md)
+
+## 11. 正式工程第一阶段设计
+
+- [仓库现状检查](docs/engineering/phase-1/01-repository-assessment.md)
+- [工程结构设计](docs/engineering/phase-1/02-engineering-structure.md)
+- [核心数据模型设计](docs/engineering/phase-1/03-domain-model.md)
+- [MySQL 8 验证方案](docs/engineering/phase-1/04-mysql-verification-plan.md)
+- [实施计划](docs/engineering/phase-1/05-implementation-plan.md)
+
+当前停留在设计评审阶段，尚未创建 NestJS、正式数据库迁移或业务模块。
