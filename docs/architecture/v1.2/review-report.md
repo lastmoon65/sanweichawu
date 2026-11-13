@@ -1,8 +1,35 @@
-# 山隐茶事 V1.2 数据模型审查报告（最后一轮 P1 修订）
+# 山隐茶事 V1.2 数据模型审查报告（SQL 与销售口径修订）
 
-基线提交：`25dda034`
+修订日期：2026-11-13（Asia/Shanghai）
 
-## 1. 结论
+本轮起点提交：`8b1b993`
+
+本轮实现提交：`a068e25286187c103105c05cdf8812f3ad81b9b7`
+
+## 0. 本轮追加修订（2026-11-13）
+
+### 0.1 P0 SQL 可执行性
+
+- `constraints.sql` 中发现 32 处非法 `END$$$`，已全部改为 `END$$`。
+- 当前存在 7 个配对完整的 `DELIMITER $$ ... DELIMITER ;` 区块。
+- 结构解析确认共有 53 个触发器，名称全部唯一。
+- 多语句触发器均以唯一的 `END$$` 结束；单语句触发器均以 `;` 结束。
+- `tests/architecture_checks.py` 已改为状态机和触发器边界解析，并带三种负向自测，不再只依赖文本包含检查。
+- 当前环境没有 MySQL/MariaDB 客户端、服务或可用 Docker daemon，因此 SQL 仍未执行验证，不能声明 MySQL 语法或运行通过。
+
+### 0.2 P1 销售统计口径
+
+已确认并实现：
+
+- 只有 `status = COMPLETED` 的订单计入销售。
+- 销售额、商品排行、商品材料毛利、桌位销售和小时趋势统一按 `completedAt` 所在营业日归属。
+- `createdAt` 不再决定销售归属日。
+- 已取消订单不计销售。
+- 损耗按 `cancelledAt` 单独统计，不混入正常销售毛利。
+- 净实收独立按有效 `PaymentRecord.receivedAt` 减有效 `RefundRecord.refundedAt` 统计，不受销售完成日影响。
+- 原型营业日暂按浏览器本地自然日计算；正式 `Store.businessDayCutoffMinute` 尚未接入。
+
+## 1. 前期结论
 
 本轮不推翻 V1.2 模型，只闭合三项 P1：
 
@@ -150,12 +177,13 @@
 ## 8. 经营报表口径
 
 ```text
-销售额 = 已 COMPLETED 且未取消订单的优惠前商品金额
+销售额 = completedAt 落在当日营业日、且状态为 COMPLETED 的订单优惠前商品金额
 优惠后销售额 = 销售额 - 优惠分摊
-净实收 = 当日有效 PaymentRecord 合计 - 当日有效 RefundRecord 合计
-未结 = 优惠后应收 - 净实收
-材料毛利 = 优惠后销售额 - 历史材料成本快照
-退款金额 = 当日有效 RefundRecord.amountFen 单列统计
+净实收 = 当日 receivedAt 的有效 PaymentRecord 合计 - 当日 refundedAt 的有效 RefundRecord 合计
+未结 = 当日完成销售的优惠后应收 - 这些销售对应的有效收款净额
+材料毛利 = 当日完成销售的优惠后销售额 - 历史材料成本快照
+退款金额 = 当日 refundedAt 的有效 RefundRecord 单列统计
+损耗 = 当日 cancelledAt 的取消订单损耗成本
 ```
 
 退款不删除或修改历史销售订单，也不冲减 COMPLETED 时点的销售额；只在净实收和退款统计中体现。
@@ -168,7 +196,11 @@
 | Prisma validate | 通过 |
 | MySQL 基线 DDL 重新生成 | 通过，27 张表 |
 | RecipeVersion DDL 默认值 | `DRAFT`，通过 |
-| SQL DELIMITER 配对、触发器重名、损坏结束符检查 | 通过 |
+| SQL 结构解析：7 个 DELIMITER 区块、53 个触发器 | 通过 |
+| SQL 非法终止符负向自测：`END$$$` / 未闭合区块 / 重复名称 | 通过 |
+| 跨日 completedAt 销售归属测试 | Playwright 自动化通过 |
+| 商品排行、材料毛利、桌位、小时趋势统一使用 completedAt | Playwright 自动化通过 |
+| 净实收按收款/退款事件日期独立统计 | Playwright 自动化通过 |
 | 服务层归属参考实现单测 | 9 组场景通过 |
 | 打包部分退款、超额拒绝、退清取消 | Playwright 自动化通过 |
 | 退款后净实收与退款单列统计 | Playwright 自动化通过 |
