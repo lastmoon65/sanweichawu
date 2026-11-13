@@ -21,6 +21,7 @@
 | P-07 | BASE + MODIFIER 同材料损耗 | 制作含基础与选项追加的茶品后取消 | 按 orderItemId + materialId 合并为一条 LossRecord | 正式模型未实现，未验证 |
 | P-08 | 多材料预占一处失败 | 第一项材料成功、第二项库存不足 | 整个事务回滚，无部分预占 | 正式模型未实现，未验证 |
 | P-09 | 同桌同时首单 | 两连接同时提交 T01 首单 | 仅产生一张 OPEN session | 正式模型未实现，未验证 |
+| P-10 | completedAt 营业日口径 | 构造昨天创建今天完成、今天创建明天完成、未完成和已取消订单 | 只统计今天 COMPLETED 的订单；商品排行、材料毛利、桌位、小时趋势一致；实收按收款/退款事件日独立统计 | 自动化通过 |
 
 ## B. Schema / SQL / 服务契约检查
 
@@ -44,6 +45,8 @@
 | S-16 | 服务层归属参考实现 | 跨店分类、错规格配方、错订单项组分、DRAFT 配方下单、错员工门店均被拒绝 | Node 单测通过 |
 | S-17 | SQL 结构完整性 | DELIMITER 配对、触发器不重名、不存在损坏的 `END$` | 静态检查通过 |
 | S-18 | 生成 DDL | MySQL DDL 中 RecipeVersion 默认值为 DRAFT | 通过 |
+| S-19 | SQL 触发器结构 | DELIMITER 配对；每个触发器按单语句或 BEGIN/END 正确结束；不存在 END$；名称不重复 | 结构解析和三种负向自测通过，MySQL 未验证 |
+| S-20 | 经营统计源码口径 | 销售使用 completedAt；取消/收款/退款分别使用 cancelledAt/receivedAt/refundedAt | 静态检查通过 |
 
 MySQL 约束测试脚本：`tests/mysql/run_p1_constraint_tests.ps1`；fixture：`tests/mysql/p1_fixture.sql`。当前主机没有 MySQL 客户端、MySQL 服务和可用 Docker daemon，因此脚本尚未实际运行。
 ## C. 必须补做的 MySQL 8 并发验收

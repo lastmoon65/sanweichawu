@@ -186,7 +186,7 @@ with sync_playwright() as p:
     expect(page.locator('.analytics-metrics .metric-card')).to_have_count(6)
     s = state(page)
     today = page.evaluate("() => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }")
-    valid = [o for o in s['orders'] if o['status'] != 'cancelled' and page.evaluate("(iso) => { const d=new Date(iso); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }", o['createdAt']) == today]
+    valid = [o for o in s['orders'] if o['status'] == 'completed' and o.get('completedAt') and page.evaluate("(iso) => { const d=new Date(iso); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }", o['completedAt']) == today]
     total_sales = sum(o['subtotal'] for o in valid)
     sales_text = page.locator('.analytics-metrics .metric-card').nth(1).locator('strong').inner_text()
     assert sales_text == f'¥{total_sales:.2f}', (sales_text, total_sales)

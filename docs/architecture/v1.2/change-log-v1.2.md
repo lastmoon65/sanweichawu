@@ -115,3 +115,13 @@
 | 原型退款 | 新增部分退款、全额退款、超额拦截、净实收和退款单列统计 |
 | 原型取消 | 仅当打包订单净实收归零后才允许取消 |
 | SQL 完整性 | 修复损坏的 `END$`，增加 DELIMITER/触发器重名检查 |`n| 测试 | 新增 `tests/refund_flow.py`、`tests/store_ownership_contract.mjs` 和 MySQL P1 约束脚本 |
+## 9. 2026-11-13 SQL 与销售口径修订
+
+| 项目 | 修改 |
+| --- | --- |
+| `constraints.sql` | 修复 32 处 `END$$$` 为 `END$$` |
+| `tests/architecture_checks.py` | 增加 DELIMITER 状态机、触发器边界解析和负向自测 |
+| `app.js` | 销售、商品排行、材料毛利、桌位、小时趋势统一按 `completedAt` 营业日 |
+| `app.js` | 净实收独立按 `receivedAt/refundedAt` 统计 |
+| `tests/analytics_completion_day.py` | 新增跨日完成、未来完成、未完成、取消、独立实收和损耗测试 |
+| `verification-evidence.md` | 记录本轮实际提交、测试结果和 MySQL 未验证项 |

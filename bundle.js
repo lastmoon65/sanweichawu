@@ -1037,7 +1037,7 @@ function renderWorkbench() {
   const pending = orders.filter((o) => o.status === 'pending').length;
   const accepted = orders.filter((o) => o.status === 'accepted').length;
   const making = orders.filter((o) => o.status === 'making').length;
-  const completeToday = orders.filter((o) => o.status === 'completed' && localDateKey(o.createdAt) === localDateKey()).length;
+  const completeToday = orders.filter((o) => o.status === 'completed' && o.completedAt && localDateKey(o.completedAt) === localDateKey()).length;
   const actionMap = { pending: ['accepted', '接单'], accepted: ['making', '开始制作'], making: ['completed', '制作完成'] };
   return `<section class="view-section workbench-view">
     <div class="view-heading">
@@ -1179,30 +1179,53 @@ function renderInventoryLedger() {
 
 function getAnalytics() {
   const today = localDateKey();
-  const allToday = store.state.orders.filter((o) => localDateKey(o.createdAt) === today);
-  const orders = allToday.filter((o) => o.status !== 'cancelled');
+  const completedToday = store.state.orders.filter((o) =>
+    o.status === 'completed' && o.completedAt && localDateKey(o.completedAt) === today
+  );
+  const cancelledToday = store.state.orders.filter((o) =>
+    o.status === 'cancelled' && o.cancelledAt && localDateKey(o.cancelledAt) === today
+  );
+  const orders = completedToday;
   const sales = orders.reduce((sum, o) => sum + Number(o.subtotal || 0), 0);
+  const salesOrderIds = new Set(orders.map((o) => o.id));
   const sessionIds = new Set(orders.filter((o) => o.sessionId).map((o) => o.sessionId));
-  const orderIds = new Set(allToday.map((o) => o.id));
-  const settlements = store.state.settlements.filter((s) => {
-    if (s.sessionId) return sessionIds.has(s.sessionId);
-    if (s.orderId) return orderIds.has(s.orderId);
-    return false;
-  });
-  const discount = settlements.reduce((sum, s) => sum + Number(s.discount || 0), 0);
-  const takeawayPayments = (store.state.payments || []).filter((p) => orderIds.has(p.orderId) && p.status === 'ACTIVE');
-  const takeawayPaymentIds = new Set(takeawayPayments.map((p) => p.id));
-  const refundTotal = (store.state.refunds || []).filter((r) => takeawayPaymentIds.has(r.paymentId) && r.status === 'ACTIVE').reduce((sum, r) => sum + Number(r.amount || 0), 0);
-  const paid = settlements.reduce((sum, s) => sum + Number(s.paid || 0), 0)
-    + takeawayPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0)
-    - refundTotal;
+
+  const settlementsForSales = store.state.settlements.filter((s) => s.sessionId && sessionIds.has(s.sessionId));
+  const discount = settlementsForSales.reduce((sum, s) => sum + Number(s.discount || 0), 0);
   const actualReceivable = Math.max(0, sales - discount);
-  const unpaid = Math.max(0, actualReceivable - paid);
-  const lossOrders = allToday.filter((o) => o.status === 'cancelled' && Number(o.lossCost) > 0);
+
+  // Cash flow follows payment/refund event dates and is intentionally independent of completedAt.
+  const activePayments = (store.state.payments || []).filter((p) => p.status === 'ACTIVE');
+  const activePaymentIds = new Set(activePayments.map((p) => p.id));
+  const paymentsToday = activePayments.filter((p) => p.receivedAt && localDateKey(p.receivedAt) === today);
+  const refundsToday = (store.state.refunds || []).filter((r) =>
+    r.status === 'ACTIVE' && activePaymentIds.has(r.paymentId) && r.refundedAt && localDateKey(r.refundedAt) === today
+  );
+  const settlementsToday = store.state.settlements.filter((s) =>
+    s.updatedAt && localDateKey(s.updatedAt) === today
+  );
+  const refundTotal = refundsToday.reduce((sum, r) => sum + Number(r.amount || 0), 0);
+  const paid = settlementsToday.reduce((sum, s) => sum + Number(s.paid || 0), 0)
+    + paymentsToday.reduce((sum, p) => sum + Number(p.amount || 0), 0)
+    - refundTotal;
+
+  // Outstanding belongs to today's completed sales, using all valid payment/refund history for those orders.
+  const salesPayments = activePayments.filter((p) =>
+    (p.orderId && salesOrderIds.has(p.orderId)) || (p.sessionId && sessionIds.has(p.sessionId))
+  );
+  const salesPaymentIds = new Set(salesPayments.map((p) => p.id));
+  const salesRefundTotal = (store.state.refunds || []).filter((r) =>
+    r.status === 'ACTIVE' && salesPaymentIds.has(r.paymentId)
+  ).reduce((sum, r) => sum + Number(r.amount || 0), 0);
+  const salesCollected = settlementsForSales.reduce((sum, s) => sum + Number(s.paid || 0), 0)
+    + salesPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0)
+    - salesRefundTotal;
+  const unpaid = Math.max(0, actualReceivable - salesCollected);
+  const lossOrders = cancelledToday.filter((o) => Number(o.lossCost) > 0);
   const loss = lossOrders.reduce((sum, o) => sum + Number(o.lossCost || 0), 0);
 
   const settlementDiscountBySession = new Map();
-  for (const s of settlements) {
+  for (const s of settlementsForSales) {
     if (s.sessionId) settlementDiscountBySession.set(s.sessionId, Number(s.discount || 0));
   }
   const sessionSales = new Map();
@@ -1240,22 +1263,22 @@ function getAnalytics() {
   const tableRows = store.state.tables.map((table) => {
     const tableOrders = orders.filter((o) => o.tableId === table.id && o.channel === 'dine');
     const sessionIdsForTable = new Set(tableOrders.map((o) => o.sessionId));
-    const settlementsForTable = settlements.filter((s) => s.sessionId && sessionIdsForTable.has(s.sessionId));
+    const settlementsForTable = settlementsForSales.filter((s) => s.sessionId && sessionIdsForTable.has(s.sessionId));
     const tableSales = tableOrders.reduce((sum, o) => sum + o.subtotal, 0);
-    const tableDiscount = settlementsForTable.reduce((sum, s) => sum + s.discount, 0);
-    const tablePaid = settlementsForTable.reduce((sum, s) => sum + s.paid, 0);
+    const tableDiscount = settlementsForTable.reduce((sum, s) => sum + Number(s.discount || 0), 0);
+    const tablePaid = settlementsForTable.reduce((sum, s) => sum + Number(s.paid || 0), 0);
     return { table, count: tableOrders.length, sales: tableSales, net: Math.max(0, tableSales - tableDiscount), paid: tablePaid };
   }).filter((t) => t.count > 0).sort((a, b) => b.net - a.net);
 
   const hourMap = new Map();
   for (const order of orders) {
-    const hour = new Date(order.createdAt).getHours();
+    const hour = new Date(order.completedAt).getHours();
     hourMap.set(hour, (hourMap.get(hour) || 0) + order.subtotal);
   }
   const hours = Array.from({ length: 11 }, (_, i) => i + 9);
   const recentStockChanges = [...store.state.inventoryTransactions].sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 4);
   return {
-    recentStockChanges, today, orders, allToday, sales, discount, paid, unpaid, actualReceivable, refundTotal, loss, settlements,
+    recentStockChanges, today, orders, completedToday, cancelledToday, sales, discount, paid, unpaid, actualReceivable, refundTotal, loss, settlements: settlementsForSales,
     productRows, productRevenueRank: [...productRows].sort((a, b) => b.net - a.net), productGrossRank: [...productRows].sort((a, b) => b.gross - a.gross), productMarginRank: [...productRows].filter((p) => p.net > 0).sort((a, b) => b.rate - a.rate),
     consumptionRows, tableRows, dineCount: orders.filter((o) => o.channel === 'dine').length, takeawayCount: orders.filter((o) => o.channel === 'takeaway').length,
     hours: hours.map((hour) => ({ hour, value: hourMap.get(hour) || 0 }))
@@ -1288,8 +1311,8 @@ function renderAnalytics() {
   return `<section class="view-section analytics-view">
     <div class="view-heading"><div><span class="eyebrow">OWNER'S PULSE</span><h1>老板经营分析</h1><p>所有指标由当前订单、桌单结账、库存流水和订单成本快照实时计算。毛利仅指商品材料毛利。</p></div><div class="view-heading-actions"><div class="date-chip">${todayLabel()}</div><button class="soft-btn" data-view="inventory">查看库存明细</button></div></div>
     <div class="metric-grid analytics-metrics">
-      <div class="metric-card"><span>今日有效订单</span><strong>${a.orders.length}</strong><small>取消订单 ${a.allToday.filter((o) => o.status === 'cancelled').length} 笔</small></div>
-      <div class="metric-card"><span>商品销售额</span><strong>${money(a.sales)}</strong><small>按订单快照汇总</small></div>
+      <div class="metric-card"><span>今日完成订单</span><strong>${a.orders.length}</strong><small>按 completedAt 归属营业日 · 取消 ${a.cancelledToday.length} 笔</small></div>
+      <div class="metric-card"><span>商品销售额</span><strong>${money(a.sales)}</strong><small>仅统计今日已完成且未取消订单</small></div>
       <div class="metric-card warm"><span>今日优惠</span><strong>${money(a.discount)}</strong><small>来自桌单结账记录</small></div>
       <div class="metric-card green"><span>实际应收</span><strong>${money(a.actualReceivable)}</strong><small>销售额 − 优惠金额</small></div>
       <div class="metric-card"><span>净实收</span><strong>${money(a.paid)}</strong><small>收款减退款${a.refundTotal ? ` · 已退 ${money(a.refundTotal)}` : '' }</small></div>
@@ -1297,7 +1320,7 @@ function renderAnalytics() {
     </div>
     <div class="dashboard-grid">
       <div class="panel-card revenue-panel">
-        <div class="panel-head"><div><span class="eyebrow">REVENUE RHYTHM</span><h2>今日营业节奏</h2></div><span class="panel-highlight">峰值 ${money(Math.max(...a.hours.map((h) => h.value)))}</span></div>
+        <div class="panel-head"><div><span class="eyebrow">REVENUE RHYTHM</span><h2>今日销售完成节奏</h2></div><span class="panel-highlight">峰值 ${money(Math.max(...a.hours.map((h) => h.value)))}</span></div>
         <div class="revenue-hero"><div><span>实际应收</span><b>${money(a.actualReceivable)}</b><small>材料毛利预计 <strong>${money(a.productRows.reduce((sum, p) => sum + p.gross, 0))}</strong></small></div><div class="channel-donut" style="--dine:${dinePct}%"><div><b>${dinePct}%</b><span>堂饮占比</span></div></div></div>
         <div class="hour-chart">${a.hours.map((h) => `<div class="hour-column"><span class="bar" style="height:${Math.max(4, (h.value / maxHour) * 100)}%" data-value="${money(h.value)}"></span><small>${h.hour}:00</small></div>`).join('')}</div>
         <div class="chart-legend"><span><i class="legend-dine"></i>堂饮 ${a.dineCount} 笔</span><span><i class="legend-takeaway"></i>打包 ${a.takeawayCount} 笔</span><span><i class="legend-loss"></i>取消损耗 ${money(a.loss)}</span><span><i class="legend-refund"></i>退款 ${money(a.refundTotal)}</span></div>
@@ -1321,12 +1344,12 @@ function renderAnalytics() {
         }).join('') : `<p class="muted-copy">完成制作后记录原料消耗。</p>`}</div>
       </div>
       <div class="panel-card table-contribution-panel">
-        <div class="panel-head"><div><span class="eyebrow">TABLE CONTRIBUTION</span><h2>各桌消费</h2></div><span class="panel-highlight">今日</span></div>
+        <div class="panel-head"><div><span class="eyebrow">TABLE CONTRIBUTION</span><h2>各桌完成销售</h2></div><span class="panel-highlight">按完成日</span></div>
         <div class="simple-table"><div class="simple-table-head"><span>桌位</span><span>订单</span><span>实际应收</span><span>已记实收</span></div>${a.tableRows.length ? a.tableRows.map((r) => `<div class="simple-table-row"><b>${esc(r.table.id)}</b><span>${r.count}</span><span>${money(r.net)}</span><span>${money(r.paid)}</span></div>`).join('') : `<div class="table-empty">今日暂无堂饮消费</div>`}</div>
       </div>
       <div class="panel-card insight-panel"><span class="eyebrow">TODAY'S SIGNAL</span><h2>${esc(bestGross.name)} 贡献了最高材料毛利</h2><p>预计材料毛利 <b>${money(bestGross.gross)}</b>，毛利率 <b>${bestGross.rate.toFixed(1)}%</b>。该数值不包含房租、人工与水电。</p><div class="insight-rule"></div><p class="muted-copy">取消但已制作订单的材料成本已计入损耗 <b>${money(a.loss)}</b>，未混入正常毛利。</p></div>
     </div>
-    <div class="data-note"><span>数据口径</span><p>销售额按订单快照计算；优惠只来自桌单结账记录，并按订单金额占比分摊到商品毛利；已制作后取消的订单不计销售，其材料成本进入损耗。打包订单制作完成不会自动登记实收；店员在实际收到钱后手动登记，退款必须关联原收款并冲减净实收。</p></div>
+    <div class="data-note"><span>数据口径</span><p>销售额只在订单进入 COMPLETED 后计入，并按 completedAt 所在营业日归属；商品排行、材料毛利、桌位和小时趋势统一使用该口径。已取消订单不计销售，损耗按取消事实单独统计。净实收按当日有效收款减退款独立计算，不受订单完成时间影响。</p></div>
   </section>`;
 }
 

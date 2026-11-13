@@ -135,7 +135,7 @@ BEGIN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'activeSessionId must reference an OPEN session of this table';
     END IF;
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_dining_table_active_session_bu`
 BEFORE UPDATE ON `dining_tables`
@@ -152,7 +152,7 @@ BEGIN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'activeSessionId must reference an OPEN session of this table';
     END IF;
   END IF;
-END$$$
+END$$
 
 -- 5. ProductVariant.activeRecipeVersionId must belong to the same variant and be ACTIVE
 CREATE TRIGGER `trg_variant_active_recipe_bi`
@@ -169,7 +169,7 @@ BEGIN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'activeRecipeVersionId must be an ACTIVE recipe of this variant';
     END IF;
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_variant_active_recipe_bu`
 BEFORE UPDATE ON `product_variants`
@@ -185,7 +185,7 @@ BEGIN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'activeRecipeVersionId must be an ACTIVE recipe of this variant';
     END IF;
   END IF;
-END$$$
+END$$
 
 -- 6. Recipe child rows are editable only while the recipe version is DRAFT
 CREATE TRIGGER `trg_variant_recipe_immutable_bu`
@@ -198,7 +198,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'ACTIVE/ARCHIVED recipe rows are immutable';
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_variant_recipe_immutable_bd`
 BEFORE DELETE ON `variant_recipes`
@@ -210,7 +210,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'ACTIVE/ARCHIVED recipe rows are immutable';
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_recipe_modifier_immutable_bu`
 BEFORE UPDATE ON `recipe_modifiers`
@@ -222,7 +222,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'ACTIVE/ARCHIVED recipe modifiers are immutable';
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_recipe_modifier_immutable_bd`
 BEFORE DELETE ON `recipe_modifiers`
@@ -234,7 +234,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'ACTIVE/ARCHIVED recipe modifiers are immutable';
   END IF;
-END$$$
+END$$
 
 
 -- 7. Snapshot and accounting fact tables are append-only
@@ -279,7 +279,7 @@ BEGIN
      OR OLD.`subtotalFen` <> NEW.`subtotalFen` THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Immutable order fields cannot be changed';
   END IF;
-END$$$
+END$$
 CREATE TRIGGER `trg_order_no_delete` BEFORE DELETE ON `orders`
 FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Orders cannot be deleted';
 DELIMITER ;
@@ -301,7 +301,7 @@ BEGIN
   IF OLD.`status` = 'VOIDED' AND NEW.`status` <> 'VOIDED' THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Voided payment cannot be reactivated';
   END IF;
-END$$$
+END$$
 CREATE TRIGGER `trg_payment_record_no_delete` BEFORE DELETE ON `payment_records`
 FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Payment records cannot be deleted';
 
@@ -327,7 +327,7 @@ BEGIN
   IF active_refunds + NEW.`amountFen` > payment_amount THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Active refunds cannot exceed the original payment';
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_refund_record_controlled_bu`
 BEFORE UPDATE ON `refund_records`
@@ -342,7 +342,7 @@ BEGIN
   IF OLD.`status` = 'VOIDED' AND NEW.`status` <> 'VOIDED' THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Voided refund cannot be reactivated';
   END IF;
-END$$$
+END$$
 CREATE TRIGGER `trg_refund_record_no_delete` BEFORE DELETE ON `refund_records`
 FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Refund records cannot be deleted';
 DELIMITER ;
@@ -362,7 +362,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Closed session allocations cannot be changed';
   END IF;
-END$$$
+END$$
 CREATE TRIGGER `trg_discount_allocation_no_delete` BEFORE DELETE ON `discount_allocations`
 FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Discount allocations cannot be deleted';
 DELIMITER ;
@@ -383,7 +383,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'DiningSession.tableId must belong to the same store';
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_session_store_bu`
 BEFORE UPDATE ON `dining_sessions`
@@ -395,7 +395,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'DiningSession.tableId must belong to the same store';
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_order_store_bi`
 BEFORE INSERT ON `orders`
@@ -412,7 +412,7 @@ BEGIN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Dine order session/table/store mismatch';
     END IF;
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_order_store_bu`
 BEFORE UPDATE ON `orders`
@@ -428,7 +428,7 @@ BEGIN
       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Dine order session/table/store mismatch';
     END IF;
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_order_item_store_bi`
 BEFORE INSERT ON `order_items`
@@ -472,7 +472,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Recipe material must belong to the same store as the variant';
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_recipe_modifier_store_bi`
 BEFORE INSERT ON `recipe_modifiers`
@@ -490,7 +490,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'RecipeModifier option/material/variant mismatch';
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_variant_recipe_store_bu`
 BEFORE UPDATE ON `variant_recipes`
@@ -506,7 +506,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Recipe material must belong to the same store as the variant';
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_recipe_modifier_store_bu`
 BEFORE UPDATE ON `recipe_modifiers`
@@ -524,7 +524,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'RecipeModifier option/material/variant mismatch';
   END IF;
-END$$$
+END$$
 CREATE TRIGGER `trg_order_item_material_store_bi`
 BEFORE INSERT ON `order_item_materials`
 FOR EACH ROW
@@ -538,7 +538,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'OrderItemMaterial material/store mismatch';
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_stock_movement_store_bi`
 BEFORE INSERT ON `stock_movements`
@@ -556,7 +556,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'StockMovement order/store mismatch';
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_loss_record_store_bi`
 BEFORE INSERT ON `loss_records`
@@ -574,7 +574,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'LossRecord order/store mismatch';
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_payment_target_store_bi`
 BEFORE INSERT ON `payment_records`
@@ -592,7 +592,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Order payment must reference a takeaway order in the same store';
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_discount_allocation_store_bi`
 BEFORE INSERT ON `discount_allocations`
@@ -606,7 +606,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'DiscountAllocation order item/session mismatch';
   END IF;
-END$$$
+END$$
 
 DELIMITER ;
 
@@ -622,7 +622,7 @@ BEGIN
   IF NEW.`status` <> 'DRAFT' THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'New RecipeVersion must start in DRAFT';
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_recipe_version_status_bu`
 BEFORE UPDATE ON `recipe_versions`
@@ -641,7 +641,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid RecipeVersion status transition';
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_variant_recipe_immutable_bi`
 BEFORE INSERT ON `variant_recipes`
@@ -653,7 +653,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Recipe ingredients can only be inserted into DRAFT versions';
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_recipe_modifier_immutable_bi`
 BEFORE INSERT ON `recipe_modifiers`
@@ -665,7 +665,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Recipe modifiers can only be inserted into DRAFT versions';
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_product_category_store_bi`
 BEFORE INSERT ON `products`
@@ -677,7 +677,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Product.categoryId must belong to Product.storeId';
   END IF;
-END$$$
+END$$
 
 CREATE TRIGGER `trg_product_category_store_bu`
 BEFORE UPDATE ON `products`
@@ -689,7 +689,7 @@ BEGIN
   ) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Product.categoryId must belong to Product.storeId';
   END IF;
-END$$$
+END$$
 
 DELIMITER ;
 
@@ -736,4 +736,3 @@ BEGIN
 END$$
 
 DELIMITER ;
-
