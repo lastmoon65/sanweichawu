@@ -53,7 +53,6 @@ sanweichawu/
 │  │  │  ├─ authorization/
 │  │  │  ├─ audit/
 │  │  │  └─ idempotency/
-│  │  └─ transactional-kernel/
 │  └─ test/
 │     ├─ unit/
 │     └─ integration/
@@ -95,6 +94,7 @@ sanweichawu/
 ├─ tests/
 │  ├─ database/
 │  │  ├─ constraints/
+│  │  ├─ transaction-harness/
 │  │  └─ concurrency/
 │  ├─ integration/
 │  └─ e2e/
@@ -124,7 +124,7 @@ Prisma 官方工具链默认从应用目录读取 Schema 和迁移。将 Prisma 
 - 审计。
 - 幂等。
 - 健康检查。
-- 为数据库验证所需的最小事务内核。
+- 测试目录中的最小数据库事务验证工具；不进入生产运行模块。
 
 第二阶段及以后每进入一个业务域，再创建对应模块和真实实现。
 
@@ -134,8 +134,8 @@ Prisma 官方工具链默认从应用目录读取 Schema 和迁移。将 Prisma 
 | --- | --- | --- |
 | 后端 | Node.js 22 + NestJS + TypeScript | REST API、认证、事务、业务权威 |
 | ORM | Prisma 6.x | Schema、Client、迁移 |
-| 数据库 | MySQL 8.4 LTS（待确认固定版本） | 持久化、唯一索引、CHECK、触发器、行锁 |
-| 商家端 | Vite + React + TypeScript | 平板优先 Web 管理界面 |
+| 数据库 | MySQL 8.4 LTS（固定镜像 digest） | 持久化、唯一索引、CHECK、触发器、行锁 |
+| 商家端 | React + Vite + TypeScript | 平板优先 Web 管理界面 |
 | 小程序 | 微信原生小程序 + TypeScript | 顾客身份、扫码、点单交互 |
 | 实时 | WebSocket + REST 轮询兜底 | 订单状态通知；第一阶段仅预留架构 |
 | 部署 | Docker Compose | backend、MySQL、web-admin / reverse proxy |
@@ -195,16 +195,27 @@ Prisma 官方工具链默认从应用目录读取 Schema 和迁移。将 Prisma 
 - 相同 key、不同 requestHash 返回冲突。
 - 响应和业务记录同事务提交。
 
-### `transactional-kernel`
+### 数据库事务验证工具（仅测试）
 
-第一阶段只为数据库/事务验收提供最小事务能力：
+第一阶段不创建生产用 `transactional-kernel` 模块，避免与后续正式业务服务重复实现。
 
-- 活动桌单获取/创建锁。
-- 库存预占与释放。
-- 收款/退款额度校验。
-- 桌单关闭冲突检查。
+在 `tests/database/transaction-harness` 中提供测试专用事务夹具，仅用于：
 
-这些服务不暴露完整业务 API，不作为第二阶段业务模块的完成品。
+- 同桌首单并发验证。
+- 库存预占与整事务回滚。
+- 幂等记录同事务验证。
+- 收款金额上限验证。
+- 退款额度竞争验证。
+- 桌单关闭与新订单竞争验证。
+
+这些工具：
+
+- 不进入 `backend/src` 生产依赖。
+- 不暴露业务 API。
+- 不作为后续正式业务服务实现。
+- 只负责按设计锁顺序执行测试事务并断言数据库事实。
+
+正式订单、库存、收款和桌单服务在后续对应阶段实现，届时复用本阶段已验证的数据库约束、锁顺序和事务模式，而不是复制测试夹具。
 
 ## 6. 运行时边界
 
@@ -262,7 +273,7 @@ LOG_LEVEL
 - `backend/test/unit`：纯函数、Guard、错误映射、金额/时间工具。
 - `backend/test/integration`：Nest + Prisma + 真实 MySQL 的 API 集成。
 - `tests/database/constraints`：CHECK、唯一索引、触发器和外键。
-- `tests/database/concurrency`：多连接、锁等待、死锁和幂等。
+- `tests/database/concurrency`：2～5 个独立连接同步屏障竞态，以及库存预占 100 请求压力测试。
 - `tests/e2e`：跨端主链路，后续阶段启用。
 - 前端可采用 Vitest + Testing Library；正式 E2E 后续使用 Playwright 对接真实 API。
 

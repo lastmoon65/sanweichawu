@@ -222,7 +222,7 @@ erDiagram
 | 制作后取消 | Order 行锁；库存不恢复 | LossRecord + CANCELLED |
 | 收款 | Session/Order 行锁 + Payment 聚合 | 独立 PaymentRecord |
 | 退款 | PaymentRecord 行锁 + 有效退款聚合 | 独立 RefundRecord |
-| 关闭桌单 | DiningTable → Session → Orders 固定锁序 | Session CLOSED + 释放桌位 |
+| 关闭桌单 | DiningTable → Session → Orders 固定锁序；所有订单 COMPLETED；净未结 = 0 | Session CLOSED + 清除 activeSessionId 并释放桌位 |
 | 发布配方 | Variant/RecipeVersion 行锁 | 旧版本归档 + 新版本 ACTIVE |
 | 幂等写入 | Idempotency 唯一键 + 同事务响应 | 业务事实 + SUCCEEDED |
 
@@ -233,43 +233,51 @@ DiningTable -> DiningSession -> Order -> Material(materialId ASC)
 -> PaymentRecord -> RefundRecord
 ```
 
-## 10. 第一阶段 Schema 变更建议
+## 10. 第一阶段 Schema 范围
 
-### 9.1 必须新增或确认
+### 10.1 已确认保留
 
-1. `StaffCredential`：员工登录凭据，具体字段取决于认证方案。
-2. 单一 Store 的种子策略。
-3. API DTO 的 BigInt 字符串序列化。
-4. Prisma 迁移与补充约束的统一可执行路径。
+- `Merchant → Store` 归属模型。
+- 单次部署只初始化一个 Store。
+- `Order.discountFen = 0`。
+- `DiningSession.discountFen = 0`。
+- 现有商品、配方、桌单、订单、库存、收款、退款、幂等和审计主模型。
 
-### 9.2 不新增
+### 10.2 首版迁移明确排除
 
-- 不新增通用规则引擎表。
-- 不新增 Redis/消息队列相关表。
-- 不新增多租户表。
-- 不新增优惠业务表的新用法。
+- 不创建 `DiscountAllocation` 表。
+- 不创建任何优惠分摊索引、生成列、CHECK 或触发器。
+- 不创建仅服务于优惠分摊的 `discountVersion`、`allocationFinalizedAt` 字段；未来增加优惠时由独立迁移补充。
+- 不实现优惠 API、优惠分摊和优惠审核。
+- 未来功能通过独立数据库迁移增加，不复用首版占位逻辑。
 
-### 9.3 优惠字段处理
+V1.2 Schema 中的 `DiscountAllocation` 和优惠分摊设计保留为未来参考资料，正式工程第一次迁移必须显式裁剪，不能直接复制整套 V1.2 DDL。
 
-推荐保留：
+### 10.3 身份模型
 
-- `Order.discountFen = 0`
-- `DiningSession.discountFen = 0`
-- `DiscountAllocation` 表保持不删除
+- 员工认证方案仍待确认。
+- 在方案确认前，不冻结 `StaffCredential` 表结构和字段。
+- 不创建临时密码字段、假登录旁路或通用万能权限模型。
+- P1-04 开工前必须完成认证方式评审。
 
-但第一阶段：
+### 10.4 事务验证边界
 
-- 不实现优惠录入 API。
-- 不实现优惠分摊服务。
-- 不允许任何业务路径写入非零优惠。
-- 优惠相关触发器可保留，但需纳入真实迁移验证。
+- 不在 `backend/src` 创建提前复用的“事务业务内核”。
+- 事务并发验证代码只放在 `tests/database/transaction-harness`。
+- 测试夹具只执行并验证数据库设计所需的锁顺序和事务事实。
+- 正式业务服务在后续阶段按域实现，不复制测试夹具。
 
-如评审决定从首版迁移移除 `DiscountAllocation`，应作为单独 Schema 变更记录，不静默删除。
+### 10.5 其他工程化要求
+
+1. API BigInt ID 统一转字符串。
+2. Prisma Schema 与补充约束进入可执行迁移。
+3. 单店 seed 只创建一条活动 Store。
+4. 历史订单、库存、资金和审计事实不得物理删除。
 
 ## 11. 模型评审门槛
 
-1. 任务书实体名称与现有模型映射确认。
-2. 单店 Store 归属根确认。
-3. 员工身份方案确认后冻结 StaffCredential 字段。
-4. 优惠字段保留策略确认。
-5. 事务内核范围确认：数据库验收所需最小服务，不等于完整业务模块。
+1. 任务书实体名称与现有模型映射已确认。
+2. 单实例 Merchant/Store 归属根已确认。
+3. 优惠首版收缩范围已确认。
+4. 测试专用事务夹具边界已确认。
+5. 员工认证方案仍需在 P1-04 前确认，之后冻结 StaffCredential。

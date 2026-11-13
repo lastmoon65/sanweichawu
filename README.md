@@ -1,4 +1,4 @@
-# 山隐茶事 · 单店现制茶饮经营管理系统 Web 原型
+# 三味茶屋 · 单店现制茶饮经营管理系统 Web 原型
 
 版本：V1.0  
 阶段：产品原型验证  
@@ -201,3 +201,23 @@ python tests/architecture_checks.py
 - [实施计划](docs/engineering/phase-1/05-implementation-plan.md)
 
 当前停留在设计评审阶段，尚未创建 NestJS、正式数据库迁移或业务模块。
+## 12. 第一阶段评审修订状态
+
+已接受：
+
+- 项目名称暂统一为“三味茶屋”。
+- 保留 `Merchant → Store` 模型，每次部署只初始化一个 Store。
+- MySQL 采用 8.4 LTS，并固定镜像 digest。
+- 商家端采用 React + Vite + TypeScript。
+- 首版保留 `Order.discountFen`、`DiningSession.discountFen`，默认 0；不创建 `DiscountAllocation` 表和优惠触发器。
+- 事务验证代码仅用于数据库测试，不作为正式业务服务提前实现。
+
+待确认：
+
+- 员工认证方式。
+- 微信小程序正式 AppID/AppSecret。
+- MySQL 8.4 固定镜像 digest。
+
+Gate 0 允许先建设 Node.js 22 工具链和 workspace，不等待 Docker daemon。MySQL 迁移、约束和并发测试必须等真实 MySQL 8 环境可用后执行，未执行不得标记为通过。
+
+评审入口：[第一阶段工程设计](docs/engineering/phase-1/README.md)。
