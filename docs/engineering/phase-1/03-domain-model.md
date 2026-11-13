@@ -239,8 +239,8 @@ DiningTable -> DiningSession -> Order -> Material(materialId ASC)
 
 - `Merchant → Store` 归属模型。
 - 单次部署只初始化一个 Store。
-- `Order.discountFen = 0`。
-- `DiningSession.discountFen = 0`。
+- `Order.discountFen = 0`，并通过 CHECK 约束拒绝非零 INSERT/UPDATE。
+- `DiningSession.discountFen = 0`，并通过 CHECK 约束拒绝非零 INSERT/UPDATE。
 - 现有商品、配方、桌单、订单、库存、收款、退款、幂等和审计主模型。
 
 ### 10.2 首版迁移明确排除

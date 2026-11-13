@@ -1,0 +1,39 @@
+{
+  "name": "sanweichawu",
+  "version": "0.1.0",
+  "private": true,
+  "description": "三味茶屋单店经营管理系统",
+  "workspaces": [
+    "backend",
+    "web-admin",
+    "mini-program"
+  ],
+  "engines": {
+    "node": ">=22.22.3 <23",
+    "npm": ">=10.9.8 <11"
+  },
+  "packageManager": "npm@10.9.8",
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "lint": "eslint backend web-admin mini-program --max-warnings=0",
+    "lint:fix": "eslint backend web-admin mini-program --fix",
+    "format": "prettier --write \"backend/**/*.{ts,json,mjs}\" \"web-admin/**/*.{ts,tsx,json,html,css}\" \"mini-program/**/*.{ts,json,mjs}\" \"*.{json,mjs}\"",
+    "format:check": "prettier --check \"backend/**/*.{ts,json,mjs}\" \"web-admin/**/*.{ts,tsx,json,html,css}\" \"mini-program/**/*.{ts,json,mjs}\" \"*.{json,mjs}\"",
+    "test": "npm run test --workspaces --if-present",
+    "audit:prod": "npm audit --omit=dev",
+    "verify": "npm run lint && npm run format:check && npm run test && npm run build && npm run audit:prod"
+  },
+  "overrides": {
+    "minimatch": "11.0.8",
+    "typescript": "6.0.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "22.20.5",
+    "eslint": "10.14.0",
+    "eslint-config-prettier": "10.1.8",
+    "prettier": "3.10.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.2"
+  }
+}

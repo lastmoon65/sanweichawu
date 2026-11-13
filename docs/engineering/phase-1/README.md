@@ -6,6 +6,11 @@
 
 本目录只包含第一阶段设计，不代表工程代码已经实现。
 
+## 当前进度
+
+- P1-01 Node.js 22 工具链与 npm workspace：已完成，等待验收。
+- P1-02 及以后：未开始。
+
 ## 评审顺序
 
 1. [仓库现状检查](./01-repository-assessment.md)
@@ -13,11 +18,12 @@
 3. [核心数据模型设计](./03-domain-model.md)
 4. [MySQL 8 验证方案](./04-mysql-verification-plan.md)
 5. [第一阶段实施计划](./05-implementation-plan.md)
+6. [P1-01 验证记录](./p1-01-verification.md)
 
 ## 已接受的评审意见
 
 1. **优惠进一步收缩**
-   - 保留 `Order.discountFen`、`DiningSession.discountFen`，默认值为 0。
+   - 保留 `Order.discountFen`、`DiningSession.discountFen`，默认值为 0，并以 CHECK 约束拒绝非零写入。
    - 首版迁移不创建 `DiscountAllocation` 表。
    - 首版不创建优惠相关触发器。
    - 不实现优惠 API、分摊和审核。

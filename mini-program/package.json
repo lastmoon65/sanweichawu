@@ -1,0 +1,18 @@
+{
+  "name": "@sanweichawu/mini-program",
+  "version": "0.1.0",
+  "private": true,
+  "description": "三味茶屋微信原生小程序工程骨架",
+  "engines": {
+    "node": ">=22.22.3 <23"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "miniprogram-api-typings": "5.3.1",
+    "vitest": "5.1.0"
+  }
+}

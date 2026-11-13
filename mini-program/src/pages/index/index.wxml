@@ -1,0 +1,6 @@
+<view class="page-shell">
+  <view class="eyebrow">SANWEI TEA HOUSE</view>
+  <view class="title">{{title}}</view>
+  <view class="status-card">{{status}}</view>
+  <view class="description">当前仅包含 P1-01 工具链骨架，未接入业务、认证或数据层。</view>
+</view>

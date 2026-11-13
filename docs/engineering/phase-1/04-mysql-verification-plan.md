@@ -90,7 +90,7 @@ SELECT @@sql_mode;
    - Prisma 无法表达的唯一约束。
    - 单店 seed 前置约束相关表不需要额外 SQL。
    - 不创建 `DiscountAllocation` 表及任何优惠分摊触发器。
-   - 仅保留 `Order.discountFen`、`DiningSession.discountFen`，写路径固定为 0。
+   - 仅保留 `Order.discountFen`、`DiningSession.discountFen`，默认 0，并创建 CHECK 约束强制首版只能为 0。
 
 提交前必须验证：
 
@@ -128,7 +128,7 @@ SELECT @@sql_mode;
 | C13 | 同一 Variant 两个 ACTIVE 配方 | 生成列唯一拒绝 |
 | C14 | 更新/删除 StockMovement、LossRecord、Payment、Refund、AuditLog | append-only 触发器拒绝 |
 | C15 | 跨店 Material/StockMovement/Loss/Payment | 触发器拒绝 |
-| C16 | 首版优惠对象裁剪 | 不存在 DiscountAllocation 表及优惠分摊触发器；discountFen 默认 0 |
+| C16 | 首版优惠对象裁剪与非零写入 | 不存在 DiscountAllocation 表及优惠分摊触发器；Order/DiningSession 的 discountFen 默认 0，CHECK 拒绝非零 INSERT/UPDATE |
 
 每条测试必须同时断言：
 

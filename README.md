@@ -1,10 +1,84 @@
-# 三味茶屋 · 单店现制茶饮经营管理系统 Web 原型
+# 三味茶屋
 
-版本：V1.0  
-阶段：产品原型验证  
-形态：纯前端、无后端、无第三方依赖
+本仓库包含正式工程骨架（P1-01）和既有产品原型。正式工程位于 `backend/`、`web-admin/`、`mini-program/`。
 
-## 1. 如何启动
+## 0. 正式工程 P1-01
+
+状态：已完成，等待 P1-01 人工验收。
+
+### 环境基线
+
+- Node.js：`v22.22.3`
+- npm：`10.9.8`
+- TypeScript：`6.0.3`
+- NestJS：`12.5.0`
+- React：`19.3.1`
+- Vite：`7.3.8`
+- Vitest：`5.1.0`
+- ESLint：`10.14.0`
+- Prettier：`3.10.1`
+
+版本固定位置：
+
+- `.nvmrc`
+- `.node-version`
+- 根及 workspace 的 `package.json engines`
+- `package-lock.json`
+
+### 安装与验证
+
+```powershell
+nvm use 22.22.3
+node --version
+npm --version
+npm ci
+npm run verify
+```
+
+`npm run verify` 依次执行：
+
+1. ESLint。
+2. Prettier 格式检查。
+3. 三个 workspace 的测试。
+4. 三个 workspace 的构建。
+5. 生产依赖安全审计。
+
+本次实际执行结果：
+
+- `node --version`：`v22.22.3`
+- `npm --version`：`10.9.8`
+- `npm ci`：成功，`found 0 vulnerabilities`
+- lint：通过
+- format check：通过
+- backend 测试：1 个测试文件、1 个测试通过
+- web-admin 测试：1 个测试文件、1 个测试通过
+- mini-program 测试：1 个测试文件、1 个测试通过
+- backend build：通过
+- web-admin build：通过
+- mini-program build：通过
+- `npm audit --omit=dev`：0 漏洞
+- 完整 `npm audit`：0 漏洞
+- backend 构建产物启动探测：进程存活，端口监听成功
+
+完整执行记录：[P1-01 验证记录](docs/engineering/phase-1/p1-01-verification.md)。
+
+### Workspace
+
+- `backend`：ESM NestJS 运行时骨架，使用 `tsc` 构建、`tsx watch` 开发；无业务模块、认证入口或假登录。
+- `web-admin`：React + Vite + TypeScript 工程壳。
+- `mini-program`：微信原生小程序 TypeScript 骨架及构建资源复制。
+
+### P1-01 边界
+
+- 未将 V1.2 设计 Schema 接入为正式 backend Prisma 工程，也未创建数据库迁移或执行 MySQL 测试。
+- 未迁移原型 localStorage 数据层。
+- 未开发商品、订单、库存、账务功能。
+- 未创建认证绕过或临时登录逻辑。
+- MySQL/Docker 验证不属于本轮通过项。
+
+---
+
+## 1. Web 原型如何启动
 
 Windows 下可以直接双击 `index.html`。也可以双击 `start.cmd`，它会启动本地服务器并自动打开浏览器。
 
@@ -209,7 +283,7 @@ python tests/architecture_checks.py
 - 保留 `Merchant → Store` 模型，每次部署只初始化一个 Store。
 - MySQL 采用 8.4 LTS，并固定镜像 digest。
 - 商家端采用 React + Vite + TypeScript。
-- 首版保留 `Order.discountFen`、`DiningSession.discountFen`，默认 0；不创建 `DiscountAllocation` 表和优惠触发器。
+- 首版保留 `Order.discountFen`、`DiningSession.discountFen`，默认 0，并由 CHECK 拒绝非零写入；不创建 `DiscountAllocation` 表和优惠触发器。
 - 事务验证代码仅用于数据库测试，不作为正式业务服务提前实现。
 
 待确认：

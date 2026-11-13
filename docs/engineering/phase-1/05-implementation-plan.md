@@ -44,12 +44,12 @@ P1-05 到 P1-07 是相互依赖的核心验收链，不能用单纯 mock 通过�
 
 验收：
 
-1. Node 22 下 `npm ci`、`npm run build`、`npm test` 可执行。
+1. Node 22 下 `npm ci`、`npm run build`、`npm run test` 和 `npm run verify` 可执行。
 2. 不依赖全局安装的 Nest CLI/Prisma CLI。
 3. 密钥文件不入库。
 4. 锁文件已提交。
 
-状态：未开始。
+状态：已完成（2026-11-13）。实际验证见 `p1-01-verification.md`。
 
 ### P1-02 MySQL 8 与迁移基线
 
@@ -67,7 +67,7 @@ P1-05 到 P1-07 是相互依赖的核心验收链，不能用单纯 mock 通过�
 
 1. 空库 `prisma migrate deploy` 成功。
 2. 约束、生成列和允许范围内的触发器全部创建。
-3. 首版不存在 `DiscountAllocation` 表和优惠分摊触发器。
+3. 首版不存在 `DiscountAllocation` 表和优惠分摊触发器；两个 discountFen 字段由 CHECK 强制为 0。
 4. 第二次部署 migrate 为 no-op。
 5. 实际版本、`sql_mode`、隔离级别记录到验证报告。
 6. 失败时不得写成通过。
@@ -166,6 +166,7 @@ P1-05 到 P1-07 是相互依赖的核心验收链，不能用单纯 mock 通过�
 
 - C01-C16 数据库约束测试。
 - 断言首版不存在 DiscountAllocation 和优惠分摊触发器。
+- 断言 Order/DiningSession 的非零 discountFen INSERT/UPDATE 被 CHECK 拒绝。
 - 失败错误码/触发器消息断言。
 - 数据变化前后查询。
 - `database-verification.md`。

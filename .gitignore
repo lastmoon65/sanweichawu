@@ -7,3 +7,12 @@ Thumbs.db
 sanweichawu-web-source.zip
 ecosystem.config.cjs
 
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+.vite/
+mini-program/project.private.config.json

@@ -99,6 +99,7 @@
 
 - `Order.discountFen`，默认值 0。
 - `DiningSession.discountFen`，默认值 0。
+- 两个字段首版均以 CHECK 约束强制等于 0；INSERT/UPDATE 非零值必须失败。
 
 首版迁移明确不创建：
 

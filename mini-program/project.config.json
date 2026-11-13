@@ -1,0 +1,17 @@
+{
+  "description": "三味茶屋微信原生小程序",
+  "packOptions": {
+    "ignore": []
+  },
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": false
+  },
+  "compileType": "miniprogram",
+  "appid": "",
+  "projectname": "sanweichawu-mini-program",
+  "miniprogramRoot": "dist/"
+}
