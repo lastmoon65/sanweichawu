@@ -62,6 +62,19 @@ npm run verify
 
 完整执行记录：[P1-01 验证记录](docs/engineering/phase-1/p1-01-verification.md)。
 
+### 后端端口与 `.env`
+
+- `backend/src/main.ts` 读取环境变量 `PORT`，未设置时默认 `3000`。
+- 当前工程**不会自动加载 `.env` 文件**，也没有引入 dotenv 或完整配置框架。
+- `.env.example` 仅用于记录变量名称，复制为 `.env` 不会自动生效。
+
+PowerShell 示例：
+
+```powershell
+$env:PORT = 3000
+npm run start --workspace @sanweichawu/backend
+```
+
 ### Workspace
 
 - `backend`：ESM NestJS 运行时骨架，使用 `tsc` 构建、`tsx watch` 开发；无业务模块、认证入口或假登录。

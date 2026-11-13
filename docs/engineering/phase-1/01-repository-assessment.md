@@ -137,42 +137,56 @@
 - Docker daemon：当前不可用。
 - 因此不能把现有 `constraints.sql` 作为“已验证迁移”。
 
-## 5. 当前工程缺口
+## 5. P1-01 后的工程状态
 
-1. 根目录无 `package.json` 和 workspace 配置。
-2. 无 NestJS 应用和设备/API 分层。
-3. 无 `backend/prisma/migrations`。
-4. 无数据库容器和健康检查。
-5. 无身份认证、授权 Guard、请求上下文。
-6. 无统一异常、响应、日志和 BigInt 序列化。
-7. 无正式 API 测试、真实数据库测试和并发测试。
-8. 无 `web-admin`、`mini-program` 工程。
-9. 无环境变量示例、秘密管理说明。
-10. 无 CI 或本地一键验证脚本。
+P1-01 已完成：
 
-## 6. 仍需确认的事项
+- 根目录 npm workspace 和锁文件。
+- Node.js 22 工具链。
+- NestJS backend 最小骨架。
+- web-admin React/Vite/TypeScript 骨架。
+- mini-program 微信原生 TypeScript 骨架。
+- ESLint、Prettier、Vitest。
+- `.env.example` 和根级 `npm run verify`。
+- backend、web-admin、mini-program 构建。
+
+仍未开始：
+
+1. Prisma Schema 接入和数据库迁移。
+2. MySQL/Docker 数据库环境与真实数据库测试。
+3. NestJS 全局配置、异常、响应、日志和健康检查。
+4. 身份认证、授权 Guard 和请求上下文。
+5. 正式业务模块、API 和集成测试。
+6. CI/CD 和部署编排。
+
+P1-01 不依赖 Docker、MySQL 或员工认证方案；这些不会阻塞已完成的工具链建设。
+
+## 6. 仍需确认与后续门禁
+
+仍需确认：
 
 1. 员工认证方式：用户名密码、PIN、企业微信或其他。
 2. 员工认证确定前，不冻结 `StaffCredential` 字段。
 3. 微信小程序正式 AppID/AppSecret 和部署环境提供时间。
 4. MySQL 8.4 具体不可变镜像 digest 在 P1-02 实施时确定。
 
-已确认、不再作为待定项：
+已确认：
 
 - 项目名称暂统一为三味茶屋。
 - 保留单实例 `Merchant → Store` 归属模型。
 - MySQL 采用 8.4 LTS。
 - 商家端采用 React + Vite + TypeScript。
 - 优惠首版范围按 4.3 收缩。
+
+后续门禁：
+
+- MySQL 8 真实验证必须在 Gate 2 前完成。
+- 员工认证方案必须在 P1-04 实施前确认。
+- P1-01 已完成，不以 Docker 或员工认证未决为理由阻止工具链验收。
+- P1-02 及以后不因本轮文档修订自动启动。
+
 ## 7. 现状结论
 
-可以复用 V1.2 的业务规则、数据模型草案和原型验收场景；不能把当前纯前端原型当作正式工程底座。
+可以复用 V1.2 的业务规则、数据模型草案和原型验收场景；当前 workspace 和三个最小工程骨架已经建立，但仍不能把 P1-01 骨架视为正式业务实现。
 
-正式开工前必须先完成：
-
-- Node 22 工具链固定。
-- Docker daemon/MySQL 8 可用。
-- 身份方案确认。
-- Schema 与首版迁移边界确认。
-
-在上述事项完成前，不创建业务模块和大规模工程代码。
+下一步是人工验收 P1-01。验收通过后，才按计划评估 P1-02；MySQL 实机验证仍属于 Gate 2 门禁。

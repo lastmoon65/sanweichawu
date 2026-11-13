@@ -2,7 +2,7 @@
 
 验证日期：2026-11-13（Asia/Shanghai）
 
-起始提交：`5704542`
+P1-01 实现提交：`dcd9135`
 
 ## 1. 工作区检查
 
@@ -108,8 +108,9 @@ npm audit --omit=dev
 
 执行：
 
-```text
-PORT=3187 node backend/dist/main.js
+```powershell
+$env:PORT = 3187
+node backend/dist/main.js
 ```
 
 结果：
@@ -118,7 +119,28 @@ PORT=3187 node backend/dist/main.js
 backend process alive=True port3187=True
 ```
 
-探测完成后已停止该测试进程。
+补充验证：
+
+```powershell
+node --env-file=.env.example -e "console.log(process.env.PORT)"
+```
+
+结果：`3000`。
+
+创建临时 `.env` 写入 `PORT=3333` 后，直接启动 backend：
+
+```text
+default port3000=True
+env-file port3333=False
+```
+
+说明当前应用不会自动加载 `.env`。删除临时文件后，显式设置 `$env:PORT=3187` 启动：
+
+```text
+explicit PORT=3187 listening=True
+```
+
+端口由 `process.env.PORT` 读取，未设置时默认 `3000`。测试进程均已停止。
 
 ## 7. 未执行项
 
