@@ -287,7 +287,7 @@ python tests/architecture_checks.py
 - [MySQL 8 验证方案](docs/engineering/phase-1/04-mysql-verification-plan.md)
 - [实施计划](docs/engineering/phase-1/05-implementation-plan.md)
 
-当前停留在设计评审阶段，尚未创建 NestJS、正式数据库迁移或业务模块。
+P1-01 已完成 backend、web-admin、mini-program 三个 workspace 工程骨架；当前尚未接入正式 Prisma Schema、数据库迁移和业务模块。
 ## 12. 第一阶段评审修订状态
 
 已接受：
