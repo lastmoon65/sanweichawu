@@ -6,7 +6,7 @@
 
 Schema 快照：提交 `17b30ea`；SHA-256 `d38dae5442f64f49c1f4faaf869a85908e8ef2e4e008eb91b87e5ff4caafc44b`
 
-契约版本：**v1.1（独立审查修订）**
+契约版本：**v1.2（独立审查补充）**
 
 契约状态：**待最终复审**。本文件依据 A1-A9、T1-T11 及本轮独立审查修订意见编制，不修改当前 Schema。
 
@@ -26,7 +26,7 @@ Schema 快照：提交 `17b30ea`；SHA-256 `d38dae5442f64f49c1f4faaf869a85908e8e
 | R1 | `User.openid` 改为非空唯一，确保下单顾客具有真实微信身份 | User 字段表、ACC-USER-ID |
 | R2 | 明确 DINE / TAKEAWAY 与 `sessionId` 的组合完整性 | Order 字段表、第 7.2 节、ACC-ORDER-TARGET |
 | R3 | 补齐六类库存流水的 `quantityDelta` / `reservedDelta` 方向及余额约束 | StockMovement 字段表、第 7.3 节、ACC-LEDGER-SIGN |
-| R4 | 补齐独立损耗与关联库存流水的门店、原料、数量、成本一致性 | LossRecord 字段表、第 7.5 节、ACC-LOSS-MATCH |
+| R4 | 补齐独立损耗与关联库存流水的门店、原料、数量、单位成本和总成本一致性 | LossRecord 字段表、第 7.5 节、ACC-LOSS-MATCH |
 | R5 | 明确 Decimal 运算、ROUND_HALF_UP 落库点和复算边界 | 成本字段表、第 7.8 节、ACC-ROUND |
 
 ## 2. 全局规范
@@ -354,8 +354,8 @@ Prisma 模型 PascalCase、字段 camelCase；MySQL 表名和列名 snake_case�
 | `reservedDelta` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | 0（候选） | `reserved_delta` | CHECK(stock_movement_direction) | — | T3 + T11 + T10 + R3 + R5 | 预占数量变化；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-LEDGER-SIGN, ACC-ROUND |
 | `onHandAfter` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | —（候选） | `on_hand_after` | CHECK(nonnegative_balance) | — | T3 + T11 + T10 + R3 + R5 | 变动后在手余额；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-LEDGER-SIGN, ACC-ROUND |
 | `reservedAfter` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | —（候选） | `reserved_after` | CHECK(nonnegative_balance) | — | T3 + T11 + T10 + R3 + R5 | 变动后预占余额；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-LEDGER-SIGN, ACC-ROUND |
-| `unitCostSnapshot` | **保留** | `Decimal?` | DECIMAL(18,6) | YES（候选取自当前结构） | —（候选） | `unit_cost_snapshot` | — | — | T3 + T11 + T10 + R5 | 变动时单位成本快照；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-ROUND |
-| `totalCostSnapshot` | **保留** | `Decimal?` | DECIMAL(18,6) | YES（候选取自当前结构） | —（候选） | `total_cost_snapshot` | — | — | T3 + T11 + T10 + R5 | 变动时总成本快照；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-ROUND |
+| `unitCostSnapshot` | **保留** | `Decimal?` | DECIMAL(18,6) | YES（候选取自当前结构） | —（候选） | `unit_cost_snapshot` | — | — | T3 + T11 + T10 + R5 + R4 | 变动时单位成本快照；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-ROUND, ACC-LOSS-MATCH |
+| `totalCostSnapshot` | **保留** | `Decimal?` | DECIMAL(18,6) | YES（候选取自当前结构） | —（候选） | `total_cost_snapshot` | — | — | T3 + T11 + T10 + R5 + R4 | 变动时总成本快照；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-ROUND, ACC-LOSS-MATCH |
 | `orderId` | **保留** | `BigInt?` | BIGINT | YES（候选取自当前结构） | —（候选） | `order_id` | IDX3(orderId, materialId, movementType)（候选） | -> orders.id; N:0..1; onDelete Restrict | T3 + A1-A9 + T8 + T9 + T10 | 来源订单；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-FK |
 | `orderItemId` | **保留** | `BigInt?` | BIGINT | YES（候选取自当前结构） | —（候选） | `order_item_id` | — | -> order_items.id; N:0..1; onDelete Restrict | T3 + A1-A9 + T8 + T10 | 来源订单明细；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-FK |
 | `operatorStaffId` | **保留** | `BigInt?` | BIGINT | YES（候选取自当前结构） | —（候选） | `operator_staff_id` | — | -> staff.id; N:0..1; onDelete Restrict | T3 + A1-A9 + T8 + T10 | 操作员工；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-FK |
@@ -381,7 +381,7 @@ Prisma 模型 PascalCase、字段 camelCase；MySQL 表名和列名 snake_case�
 | `orderItemId` | **保留** | `BigInt?` | BIGINT | YES（已冻结） | —（候选） | `order_item_id` | — | -> order_items.id; N:0..1; onDelete Restrict | T3 + A1-A9 + T8 + T10 | 可选来源订单明细；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-FK |
 | `stockMovementId` | **保留** | `BigInt?` | BIGINT | YES（已冻结） | —（候选） | `stock_movement_id` | UQ(stockMovementId) | -> stock_movements.id; N:0..1; onDelete Restrict | T3 + A1-A9 + T8 + T9 + T10 + R4 | 额外损耗关联库存流水；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-UQ, ACC-FK, ACC-LOSS-MATCH |
 | `quantity` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | —（候选） | `quantity` | — | — | T3 + T11 + T10 + R4 + R5 | 损耗数量；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-LOSS-MATCH, ACC-ROUND |
-| `unitCostSnapshot` | **保留** | `Decimal` | DECIMAL(18,6) | NO（候选） | —（候选） | `unit_cost_snapshot` | — | — | T3 + T11 + T10 + R5 | 损耗时单位成本；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-ROUND |
+| `unitCostSnapshot` | **保留** | `Decimal` | DECIMAL(18,6) | NO（候选） | —（候选） | `unit_cost_snapshot` | — | — | T3 + T11 + T10 + R5 + R4 | 损耗时单位成本；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-ROUND, ACC-LOSS-MATCH |
 | `lossCostSnapshot` | **保留** | `Decimal` | DECIMAL(18,6) | NO（候选） | —（候选） | `loss_cost_snapshot` | — | — | T3 + T11 + T10 + R4 + R5 | 损耗总成本；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-LOSS-MATCH, ACC-ROUND |
 | `reason` | **保留** | `String` | VARCHAR(500)（长度候选） | NO（候选） | —（候选） | `reason` | — | — | T3 + A1-A9 + T10 | 损耗原因；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP |
 | `operatorStaffId` | **保留** | `BigInt?` | BIGINT | YES（候选取自当前结构） | —（候选） | `operator_staff_id` | — | -> staff.id; N:0..1; onDelete Restrict | T3 + A1-A9 + T8 + T10 | 登记损耗员工；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-FK |
@@ -733,7 +733,11 @@ LossRecord.storeId = StockMovement.storeId
 LossRecord.materialId = StockMovement.materialId
 StockMovement.movementType = 'ADJUST'
 StockMovement.quantityDelta = -LossRecord.quantity
+StockMovement.unitCostSnapshot IS NOT NULL
+StockMovement.totalCostSnapshot IS NOT NULL
+StockMovement.unitCostSnapshot = LossRecord.unitCostSnapshot
 StockMovement.totalCostSnapshot = LossRecord.lossCostSnapshot
+LossRecord.lossCostSnapshot = ROUND_HALF_UP(LossRecord.unitCostSnapshot × LossRecord.quantity, 6)
 LossRecord.stockMovementId 唯一
 ```
 
@@ -744,6 +748,8 @@ LossRecord.quantity > 0
 LossRecord.unitCostSnapshot >= 0
 LossRecord.lossCostSnapshot >= 0
 ```
+
+即使两边总成本相同，只要单位成本不一致就必须拒绝。例如损耗 2kg、单位成本 10.000000 元/kg，总成本应为 ROUND_HALF_UP(10.000000 × 2, 6) = 20.000000 元；关联流水若记录单位成本 8.000000 元/kg，即使总成本填写 20.000000 元也不通过。
 
 数据库负责 FK、唯一约束和余额约束；跨表字段等式由服务事务及集成测试保证。订单内已计入 CONSUME 的报损必须保持 `stockMovementId = NULL`，不得额外扣库存或重复累计成本。
 
@@ -855,7 +861,7 @@ LossRecord.lossCostSnapshot >= 0
 | ACC-USER-ID | `users.openid` 必须非空且唯一；无法取得真实微信身份时禁止创建可下单 User。 |
 | ACC-ORDER-TARGET | DINE 必须有 session_id，TAKEAWAY 必须无 session_id；非法组合被数据库和服务层拒绝。 |
 | ACC-LEDGER-SIGN | 六类 movementType 的方向必须符合规则表；余额不得为负，reserved 不得大于 onHand。 |
-| ACC-LOSS-MATCH | 独立损耗与关联库存流水的门店、原料、数量、总成本必须一致。 |
+| ACC-LOSS-MATCH | 独立损耗与关联库存流水的门店、原料、数量、单位成本和总成本必须一致；总成本按公式复算。 |
 | ACC-ROUND | 按 ROUND_HALF_UP 在指定落库点舍入，结果与可重复样例一致。 |
 
 ## 10. 待独立审查的候选属性
