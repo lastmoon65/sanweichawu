@@ -4,13 +4,15 @@
 
 ## 0. 正式工程当前状态
 
-P1-01 已完成；P1-02-A 的 21 模型 Prisma Schema 已建立并通过 Prisma 6.19.0 format/validate。尚未生成或执行 Migration，真实 MySQL 8 验证未开始。
+P1-01 已通过验收并保持冻结。P1-02-A 字段契约、P1-02-B1 Schema 和 P1-02-B2 静态契约检查均已通过。P1-02-B3 已生成初始 Migration 与领域 CHECK Migration，并通过 Prisma 6.19.0 format/validate 和本地静态检查；真实 MySQL 8.4 执行与约束行为验证尚未开始。
 
 - [P1-02-A Schema 交付报告](docs/engineering/phase-1/p1-02-a-schema-report.md)
+- [P1-02-A 冻结字段契约](docs/engineering/phase-1/p1-02-a-field-contract.md)
+- [P1-02-B3 Migration 生成与静态审查报告](docs/engineering/phase-1/p1-02-b3-migration-report.md)
 
 ## 0.1 P1-01 工程基线
 
-状态：已完成，等待 P1-01 人工验收。
+状态：已通过人工验收，当前保持冻结。
 
 ### 环境基线
 
@@ -45,9 +47,11 @@ npm run verify
 
 1. ESLint。
 2. Prettier 格式检查。
-3. 三个 workspace 的测试。
-4. 三个 workspace 的构建。
-5. 生产依赖安全审计。
+3. Prisma Schema 字段契约检查。
+4. Migration SQL 静态契约检查。
+5. 三个 workspace 的测试。
+6. 三个 workspace 的构建。
+7. 生产依赖安全审计。
 
 本次实际执行结果：
 

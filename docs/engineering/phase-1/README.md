@@ -1,16 +1,19 @@
 # 三味茶屋第一阶段工程设计
 
-状态：评审意见已吸收，等待人工验收
+状态：第一阶段设计已通过 Gate 0；当前实现进度见下方
 修订日期：2026-11-13
 修订起点：`8ec84a8`
 
-本目录包含第一阶段设计，以及 P1-01/P1-02-A 的实现验证记录。
+本目录包含第一阶段设计，以及 P1-01、P1-02-A、P1-02-B 的实现与验证记录。当前字段和迁移的权威依据是 P1-02-A 冻结字段契约与 P1-02-B3 Migration 报告。
 
 ## 当前进度
 
-- P1-01 Node.js 22 工具链与 npm workspace：已完成。
-- P1-02-A Prisma Schema：已完成 format/validate，尚未生成 Migration。
-- P1-02-B Migration 与真实 MySQL 验证：未开始。
+- P1-01 Node.js 22 工具链与 npm workspace：已通过验收，保持冻结。
+- P1-02-A 字段决策与 21 模型字段契约：已通过验收。
+- P1-02-B1 Prisma Schema：已通过验收。
+- P1-02-B2 Schema 静态契约检查：已通过验收。
+- P1-02-B3 Migration 生成与 SQL 静态审查：已完成，等待独立审查；真实 MySQL 8.4 尚未执行。
+- P1-02-B4 真实 MySQL 迁移、约束与数据库行为验证：未开始。
 
 ## 评审顺序
 
@@ -21,8 +24,12 @@
 5. [第一阶段实施计划](./05-implementation-plan.md)
 6. [P1-01 验证记录](./p1-01-verification.md)
 7. [P1-02-A Prisma Schema 交付报告](./p1-02-a-schema-report.md)
+8. [P1-02-A 冻结字段契约](./p1-02-a-field-contract.md)
+9. [P1-02-B3 Migration 生成与静态审查报告](./p1-02-b3-migration-report.md)
 
-## 已接受的评审意见
+## 设计期评审记录
+
+> 以下内容是设计期历史记录，其中部分口径已被后续冻结决策替代。例如最终 21 模型不再包含 Merchant，`Order.discountFen` / `DiningSession.discountFen` 已删除，首版也不引入触发器或生成列。当前实现以 P1-02-A 字段契约和 P1-02-B 系列报告为准。
 
 1. **优惠进一步收缩**
    - 保留 `Order.discountFen`、`DiningSession.discountFen`，默认值为 0，并以 CHECK 约束拒绝非零写入。

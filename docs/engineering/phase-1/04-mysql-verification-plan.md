@@ -1,5 +1,7 @@
 # 任务 4：MySQL 8 验证方案
 
+> 历史方案说明：本文保留第一阶段设计期背景。文中涉及 Merchant、优惠字段、触发器、生成列、旧 RecipeVersion/配方约束等口径已被后续决策替代。当前 Migration 范围和字段约束以 `p1-02-a-field-contract.md` 与 `p1-02-b3-migration-report.md` 为准；真实 MySQL 验证要求仍适用于后续 B4。
+
 ## 1. 当前环境状态
 
 本设计阶段检查结果：

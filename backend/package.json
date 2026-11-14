@@ -14,7 +14,8 @@
     "test": "vitest run --config vitest.config.ts",
     "prisma:format": "prisma format --schema prisma/schema.prisma",
     "prisma:validate": "prisma validate --schema prisma/schema.prisma",
-    "prisma:check-contract": "node scripts/check-schema.mjs"
+    "prisma:check-contract": "node scripts/check-schema.mjs",
+    "prisma:check-migrations": "node scripts/check-migration-sql.mjs"
   },
   "dependencies": {
     "@nestjs/common": "12.5.0",
