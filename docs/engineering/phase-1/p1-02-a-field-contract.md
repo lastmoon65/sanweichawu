@@ -892,19 +892,42 @@ LossRecord.lossCostSnapshot >= 0
 | ACC-LOSS-MATCH | 独立损耗与关联库存流水的门店、原料、数量、单位成本和总成本必须一致；总成本按公式复算。 |
 | ACC-ROUND | 按 ROUND_HALF_UP 在指定落库点舍入，结果与可重复样例一致。 |
 
-## 10. 属性收口结果
+## 10. 属性收口结果与默认值白名单
 
-本轮已将原六类候选项全部关闭：
+### 10.1 已收口属性
 
 1. 字符串采用字段表中的最终 VARCHAR 长度；长说明统一 TEXT。
-2. 只保留时间生成、排序、选项零价差、材料初始库存/成本和 version 默认值；业务状态、角色、类型、布尔选择和账本变动量必须显式写入。
-3. `openedAt`、`receivedAt`、`refundedAt`、`occurredAt` 不得使用数据库 now() 默认，由业务事务记录真实事件时间。
+2. 业务状态、角色、类型、布尔选择、订单状态和账本变动量不设置默认值，必须由业务事务显式写入。
+3. `openedAt`、`receivedAt`、`refundedAt`、`occurredAt` 不使用数据库 now() 默认，由业务事务记录真实事件时间。
 4. 普通索引按字段表中的最终清单实施；未列出的普通索引不创建。
 5. 枚举采用“枚举契约”中的最终取值。
 6. 可空字段采用字段表中的最终语义；未说明的必填字段一律 NOT NULL。
 
-当前不存在未决候选属性。若实施阶段需要改变上述任何值，必须先修订字段契约并重新审查。
+### 10.2 非空默认/生成值白名单
 
+| 字段范围 | 默认/生成值 | 字段数 | 业务或技术理由 |
+| --- | --- | ---: | --- |
+| 21 个模型主键 `id` | `AUTO_INCREMENT` | 21 | T1 内部主键；主键由数据库生成，不允许业务指定 |
+| 15 个 `createdAt` | `CURRENT_TIMESTAMP(3)` | 15 | T2 记录数据创建时间；统一毫秒精度且存 UTC |
+| 12 个 `updatedAt` | Prisma `@updatedAt` 维护，无数据库默认 | 12 | T2 记录最近一次应用层更新时间；原生 SQL 更新不由本白名单自动补值 |
+| `Category.sortOrder`、`Product.sortOrder`、`ProductVariant.sortOrder`、`VariantOptionGroup.sortOrder`、`VariantOptionValue.sortOrder` | `0` | 5 | 未主动排序时按 0 排序；不表示业务状态 |
+| `Store.timezone` | `"Asia/Shanghai"` | 1 | 单店首版默认运营时区；API 仍返回 UTC，展示时使用该时区 |
+| `Store.businessDayCutoffMinute` | `0` | 1 | 默认自然日切点即 00:00，适合首版无跨日营业配置场景 |
+| `VariantOptionValue.priceDeltaFen` | `0` | 1 | 选项默认不加价；非零加价必须显式填写 |
+| `Material.onHand` | `0` | 1 | 新建材料默认没有在手库存；实际入库必须写库存流水 |
+| `Material.reserved` | `0` | 1 | 新建材料默认没有预占库存；预占必须写库存流水 |
+| `Material.averageCostPerUnit` | `0` | 1 | 尚未发生入库时没有可计算的移动平均成本 |
+| `Material.version`、`DiningSession.version`、`Order.version` | `1` | 3 | T4 乐观锁初始版本；每次成功更新递增 |
+
+合计白名单字段：**62 个**。字段表中任何非空默认/生成值，都必须能在本表找到对应行；其他字段默认值必须为空。
+
+### 10.3 一致性规则
+
+- 白名单之外出现数据库默认值，视为契约错误。
+- 业务事件时间不得使用 `CURRENT_TIMESTAMP` 代替真实业务时间。
+- `updatedAt` 的 Prisma 维护行为不等于数据库自动默认值，原生 SQL 更新必须显式更新。
+- 默认值数量或适用字段发生任何变化，必须同步修订本表和字段表。
+- 当前不存在未决候选属性。若实施阶段需要改变上述任何值，必须先修订字段契约并重新审查。
 ## 11. 完整性声明
 
 - 21 个模型完整覆盖。
