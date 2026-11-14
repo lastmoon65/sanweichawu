@@ -180,7 +180,7 @@ npm run verify
 - ESLint：通过，0 warning。
 - Prettier check：通过。
 - Schema 字段契约：通过，17 个负向自测。
-- Migration SQL 静态契约：通过，10 个负向自测。
+- Migration SQL 静态契约：通过，11 个负向自测。
 - backend、web-admin、mini-program：各 1 个测试文件、1 个测试通过。
 - 三个 workspace 构建：通过。
 - `npm audit --omit=dev`：0 vulnerabilities。
