@@ -1,12 +1,18 @@
 # P1-02-A 字段级设计一致性审计
 
-审计日期：2026-11-14（Asia/Shanghai）  
-审计对象：Git 提交 `ff3a18d` 的 `backend/prisma/schema.prisma`  
-唯一业务依据：用户提供的《三味茶屋单店经营系统 P1-02 最小可用数据模型最终设计报告》  
-最终报告文件 SHA-256：`b329376bc01f35bba3d4bb2bd788589383778b73ac427e081e7683a4604263d5`  
-Schema SHA-256：`d38dae5442f64f49c1f4faaf869a85908e8ef2e4e008eb91b87e5ff4caafc44b`  
+审计日期：2026-11-14（Asia/Shanghai）
+
+审计对象：Git 提交 `ff3a18d` 的 `backend/prisma/schema.prisma`
+
+唯一业务依据：用户提供的《三味茶屋单店经营系统 P1-02 最小可用数据模型最终设计报告》
+
+最终报告文件 SHA-256：`b329376bc01f35bba3d4bb2bd788589383778b73ac427e081e7683a4604263d5`
+
+Schema SHA-256：`d38dae5442f64f49c1f4faaf869a85908e8ef2e4e008eb91b87e5ff4caafc44b`
+
 审计性质：只读审查和报告；未修改 Schema、Migration、依赖或业务代码。
 
+后续状态：A1-A9 已确认，T5-T7 已冻结；本文的 188 个待确认字段数只代表审计盘点，不代表待业务决策数。目标物理字段数更新为 202，详见 [业务决策落档](./p1-02-a-business-decisions.md) 和 [字段决策收敛状态](./p1-02-a-field-decision-convergence.md)。
 ## 1. 审计结论
 
 当前 Schema 恰好包含最终报告列出的 21 个模型，且明确删除的模型和指定字段未出现；但**无法证明 21 个模型的完整字段集合已按最终设计冻结**。

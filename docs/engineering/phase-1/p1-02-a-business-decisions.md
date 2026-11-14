@@ -1,10 +1,12 @@
 # P1-02-A 业务决策落档
 
 记录日期：2026-11-14（Asia/Shanghai）
-适用项目：三味茶屋单店经营管理系统
-决策状态：**A1-A9 已由业务负责人确认**
-执行状态：仅文档落档；Schema、Migration、依赖和业务代码均未修改。
 
+适用项目：三味茶屋单店经营管理系统
+
+决策状态：**A1-A9 业务决策已确认；T5-T7 技术决策已冻结**
+
+执行状态：仅文档落档；Schema、Migration、依赖和业务代码均未修改。
 ## 1. 正式业务决策
 
 | 编号 | 主题 | 影响字段 | 正式结论 | 状态 |
@@ -19,16 +21,25 @@
 | A8 | 库存与损耗追溯 | StockMovement/LossRecord 来源、操作人、原因、可选订单关联 | 保留必要追溯信息；订单内报损不重复扣库存或成本；独立损耗必须关联库存流水；不允许为满足非空约束制造虚假关联。 | **已确认** |
 | A9 | 人工可读流水编号 | `StockMovement.movementNo`、`LossRecord.lossNo` | 两个字段删除；首版使用内部主键，不增加额外编号生成机制。 | **已确认** |
 
+### 1.1 本轮冻结的技术决策
+
+| 编号 | 主题 | 正式结论 | 状态 |
+| --- | --- | --- | --- |
+| T5 | 主数据软删除 | 删除 Category、Product、ProductVariant、Material、DiningTable 的 `deletedAt`；使用 `ACTIVE / DISABLED` 管理生命周期；被引用数据禁止物理删除；不引入软删除。 | **已冻结** |
+| T5-UQ | 主数据唯一约束 | 按业务确认冻结整组唯一约束：Category `[storeId, name]`；Product `[storeId, name]`；ProductVariant `[productId, name]`；Material `[storeId, name]`；DiningTable `[storeId, code]`；VariantOptionGroup `[variantId, name]`；VariantOptionValue `[optionGroupId, name]`。停用记录仍占用名称，恢复原记录，不新建同名记录。 | **已冻结** |
+| T6 | 选项名称唯一 | 采用无生成列的普通复合唯一约束；不实现 active name 唯一。 | **已冻结** |
+| T7 | 选项 code 快照 | 删除 `OrderItemOption.groupCodeSnapshot`、`valueCodeSnapshot`；保留组名、值名和价格差快照；唯一约束改为 `[orderItemId, optionValueId]`，历史展示只读快照。 | **已冻结** |
+
 ## 2. 决策后的字段总量
 
-当前 Schema 物理字段 224 个。按本轮决定仅做字段删除后的目标字段数为 **209** 个；Prisma 关系字段不受本轮字段删除影响。
+当前 Schema 物理字段 224 个。按本轮决定仅做字段删除后的目标字段数为 **202** 个；Prisma 关系字段不受本轮字段删除影响。
 
 | 分类 | 字段数 | 含义 |
 | --- | ---: | --- |
-| 本轮明确删除 | 15 | 不得进入后续字段契约 |
+| 本轮明确删除 | 22 | 不得进入后续字段契约 |
 | 本轮明确保留 | 24 | A1-A9 直接确认保留 |
 | 既有批准/继承保留 | 71 | 最终报告或既有决策已覆盖 |
-| 技术待确认 | 114 | 字段保留或删除未定，等待统一技术规范 |
+| 技术待确认 | 107 | 剩余字段的类型、约束或取舍仍需技术规范 |
 
 说明：以上“保留*（既有批准/继承）”不等于其类型、长度、默认值和索引均已确认；只表示该字段本身不应在本轮业务决策中再次讨论。
 
@@ -36,10 +47,10 @@
 
 标记规则：
 
-- **删除**：A1-A9 明确删除。
+- **删除**：A1-A9 或 T5/T7 明确删除。
 - **保留**：A1-A9 明确保留。
 - 保留*：此前最终报告已明确或继承批准，本轮不重复决策。
-- 待确认：当前字段存在，但最终报告没有明确业务决定；等待技术规范或后续设计确认。
+- 待确认：当前字段存在，但最终报告或本轮冻结方案没有明确其完整技术属性。
 
 ### Store
 
@@ -93,7 +104,7 @@
 | `status` | `CommonStatus` | **保留（本轮确认）** |
 | `createdAt` | `DateTime` | **待技术确认** |
 | `updatedAt` | `DateTime` | **待技术确认** |
-| `deletedAt` | `DateTime?` | **待技术确认** |
+| `deletedAt` | `DateTime?` | **删除（本轮确认）** |
 
 ### Product
 
@@ -109,7 +120,7 @@
 | `sortOrder` | `Int` | **待技术确认** |
 | `createdAt` | `DateTime` | **待技术确认** |
 | `updatedAt` | `DateTime` | **待技术确认** |
-| `deletedAt` | `DateTime?` | **待技术确认** |
+| `deletedAt` | `DateTime?` | **删除（本轮确认）** |
 
 ### ProductVariant
 
@@ -124,7 +135,7 @@
 | `sortOrder` | `Int` | **待技术确认** |
 | `createdAt` | `DateTime` | **待技术确认** |
 | `updatedAt` | `DateTime` | **待技术确认** |
-| `deletedAt` | `DateTime?` | **待技术确认** |
+| `deletedAt` | `DateTime?` | **删除（本轮确认）** |
 
 ### VariantOptionGroup
 
@@ -188,7 +199,7 @@
 | `version` | `Int` | **待技术确认** |
 | `createdAt` | `DateTime` | **待技术确认** |
 | `updatedAt` | `DateTime` | **待技术确认** |
-| `deletedAt` | `DateTime?` | **待技术确认** |
+| `deletedAt` | `DateTime?` | **删除（本轮确认）** |
 
 ### StockMovement
 
@@ -243,7 +254,7 @@
 | `capacity` | `Int` | **删除（本轮确认）** |
 | `createdAt` | `DateTime` | **待技术确认** |
 | `updatedAt` | `DateTime` | **待技术确认** |
-| `deletedAt` | `DateTime?` | **待技术确认** |
+| `deletedAt` | `DateTime?` | **删除（本轮确认）** |
 
 ### DiningSession
 
@@ -308,9 +319,9 @@
 | `id` | `BigInt` | **待技术确认** |
 | `orderItemId` | `BigInt` | **待技术确认** |
 | `optionValueId` | `BigInt` | **保留（本轮确认）** |
-| `groupCodeSnapshot` | `String` | **待技术确认** |
+| `groupCodeSnapshot` | `String` | **删除（本轮确认）** |
 | `groupNameSnapshot` | `String` | **保留（既有批准/继承）** |
-| `valueCodeSnapshot` | `String` | **待技术确认** |
+| `valueCodeSnapshot` | `String` | **删除（本轮确认）** |
 | `valueNameSnapshot` | `String` | **保留（既有批准/继承）** |
 | `priceDeltaFenSnapshot` | `BigInt` | **保留（既有批准/继承）** |
 
@@ -372,28 +383,38 @@
 
 ## 4. 删除字段汇总
 
-共有 15 个物理字段在本轮明确删除：
+共有 22 个物理字段在本轮明确删除：
 
 | 模型 | 删除字段 |
 | --- | --- |
 | `Store` | `pendingReminderMinutes`、`maxPendingOrdersPerCustomer`、`maxPendingOrdersPerSession`、`deletedAt` |
 | `User` | `unionid`、`nickname`、`avatarUrl` |
+| `Category` | `deletedAt` |
+| `Product` | `deletedAt` |
+| `ProductVariant` | `deletedAt` |
 | `VariantOptionGroup` | `code` |
 | `VariantOptionValue` | `code` |
-| `Material` | `warningThreshold` |
+| `Material` | `warningThreshold`、`deletedAt` |
 | `StockMovement` | `movementNo` |
 | `LossRecord` | `lossNo` |
-| `DiningTable` | `capacity` |
+| `DiningTable` | `capacity`、`deletedAt` |
 | `DiningSession` | `discountFen` |
 | `Order` | `discountFen` |
+| `OrderItemOption` | `groupCodeSnapshot`、`valueCodeSnapshot` |
 
 ## 5. 约束和索引影响
 
 | Schema 对象 | 当前内容 | 决策后的影响 | 状态 |
 | --- | --- | --- | --- |
-| `Store @@index` | `[status, deletedAt]` | `deletedAt` 已删除，该索引必须调整或删除；是否保留 `[status]` 索引待技术确认。 | 待确认 |
-| `VariantOptionGroup @@unique` | `[variantId, code]` | `code` 已删除，该唯一约束必须删除；是否改用名称唯一或依赖服务层校验待确认。 | 待确认 |
-| `VariantOptionValue @@unique` | `[optionGroupId, code]` | `code` 已删除，该唯一约束必须删除；替代唯一性待确认。 | 待确认 |
+| `Store @@index` | `[status, deletedAt]` | `deletedAt` 已删除，该索引必须调整或删除；是否保留 `[status]` 索引仍待技术确认。 | 待确认 |
+| `Category @@unique` | 当前无名称唯一约束 | 增加 `[storeId, name]`。 | **已冻结** |
+| `Product @@unique` | 当前无名称唯一约束 | 增加 `[storeId, name]`；Product 采用全店名称唯一，不按分类唯一。 | **已冻结** |
+| `ProductVariant @@unique` | 当前无名称唯一约束 | 增加 `[productId, name]`。 | **已冻结** |
+| `Material @@unique` | 当前无名称唯一约束 | 增加 `[storeId, name]`。 | **已冻结** |
+| `DiningTable @@unique` | 当前无桌号唯一约束 | 增加 `[storeId, code]`；扫码使用 code，name 只用于展示。 | **已冻结** |
+| `VariantOptionGroup @@unique` | `[variantId, code]` | 删除旧约束，改为 `[variantId, name]`；不区分 ACTIVE/DISABLED。 | **已冻结** |
+| `VariantOptionValue @@unique` | `[optionGroupId, code]` | 删除旧约束，改为 `[optionGroupId, name]`；不区分 ACTIVE/DISABLED。 | **已冻结** |
+| `OrderItemOption @@unique` | `[orderItemId, groupCodeSnapshot, valueCodeSnapshot]` | 删除旧约束，改为 `[orderItemId, optionValueId]`。 | **已冻结** |
 | `StockMovement.movementNo @unique` | 人工编号唯一 | 字段删除，旧唯一约束同步删除；`dedupeKey @unique` 保留。 | 已确认 |
 | `LossRecord.lossNo @unique` | 人工编号唯一 | 字段删除，旧唯一约束同步删除；`dedupeKey @unique` 保留。 | 已确认 |
 
@@ -401,21 +422,21 @@
 
 ## 6. 关系影响清单
 
-本轮删除的 15 个字段全部是普通标量字段，没有直接删除外键列，因此**没有 Prisma 虚拟关系需要因字段删除而直接移除**。
+本轮删除的 22 个字段全部是普通标量字段，没有直接删除外键列，因此**没有 Prisma 虚拟关系需要因字段删除而直接移除**。
 
 需要特别关注的关系：
 
 | 关系/字段 | 本轮状态 | 影响 |
 | --- | --- | --- |
 | `OrderItem.product` / `OrderItem.variant` | 物理外键已确认保留 | 历史展示和计价仍只读快照 |
-| `OrderItemOption.optionValue` | 物理外键已确认保留 | 选项来源可追溯，但 `code` 源字段删除后，历史 code 快照是否保留待技术确认 |
+| `OrderItemOption.optionValue` | 物理外键已确认保留 | T7 已删除码值快照；历史展示使用名称和价格差快照 |
 | `OrderItemMaterial.material` | 物理外键已确认保留 | 原料维度和成本追溯保留 |
 | `StockMovement.order` / `orderItem` / `operatorStaff` | A8 已确认保留 | 业务来源和操作人可追溯 |
 | `LossRecord.order` / `orderItem` / `operatorStaff` / `stockMovement` | A8 已确认保留 | 订单内报损与独立损耗必须通过 `stockMovementId` 语义区分 |
 | `Store.products`、`Store.orders` 等反向集合 | 未因本轮删除变化 | 是否保留属于 ORM 实现，不单独做业务审批，但必须映射到确认后的物理外键 |
-| `Category/Product/ProductVariant/Material/DiningTable` 的 `deletedAt` | 未在本轮删除 | 是否使用软删除仍需逐表技术确认 |
+| `Category/Product/ProductVariant/Material/DiningTable` 的 `deletedAt` | T5 已冻结删除 | 通过 status、Restrict 和历史快照保留；不引入软删除 |
 
-`OrderItemOption.groupCodeSnapshot` 与 `valueCodeSnapshot` 未在 A7 中直接删除。由于源表的 `code` 字段已删除，这两个快照字段应作为单独技术问题讨论，不能自行推断删除或保留。
+T7 已冻结删除 `OrderItemOption.groupCodeSnapshot` 与 `valueCodeSnapshot`。历史订单展示只使用组名、值名和价格差快照；关联追溯使用 `optionValueId`。
 
 ## 7. 技术规范待确认清单
 
@@ -427,13 +448,10 @@
 | T2 | 时间字段规范 | 所有 `createdAt/updatedAt`、业务事件时间 | 使用 `DATETIME(3)`、数据库存 UTC；`updatedAt` 由 Prisma Client 维护，原生 SQL 显式更新。 | 待确认 |
 | T3 | 字符串长度、可空性、枚举取值和默认值 | 所有 String/枚举字段 | 以业务语义分层：code 40、编号 64、幂等/dedupe 160、名称 40/80/120、URL 512、备注/原因 500；逐字段写入契约。 | 待确认 |
 | T4 | 乐观锁 | `Material.version`、`DiningSession.version`、`Order.version` | 分别按真实并发路径评估。若能使用条件更新、事务和行锁，就不保留无必要版本字段。 | 待确认 |
-| T5 | 软删除矩阵 | `Category.deletedAt`、`Product.deletedAt`、`ProductVariant.deletedAt`、`Material.deletedAt`、`DiningTable.deletedAt` | 仅对需要历史保留和同名重建的主数据保留；Store 已明确删除；订单、库存、资金事实不软删除。 | 待确认 |
-| T6 | 选项唯一性 | `VariantOptionGroup`、`VariantOptionValue` | 删除 code 后，建议使用 active name 生成列唯一索引；需确认名称是否业务唯一。 | 待确认 |
-| T7 | 历史选项代码快照 | `OrderItemOption.groupCodeSnapshot`、`valueCodeSnapshot` | 源 code 删除后，建议删除代码快照、保留组名/值名/价格快照；需确认是否仍需历史代码。 | 待确认 |
 | T8 | 外键和删除策略 | 全部外键 | 保持单列 FK、`onDelete: Restrict`；可选关系必须反映真实业务可空性。 | 待确认 |
 | T9 | 索引与 CHECK 清单 | 所有模型 | 在字段契约中显式列出唯一、普通、生成列索引及 CHECK；不增加触发器。 | 待确认 |
 | T10 | 列名与命名映射 | 全部表/列 | 表名继续 snake_case；列名是否保持 Prisma 字段名需一次性确认。 | 待确认 |
-| T11 | 订单计算与快照字段 | `Order.subtotalFen`、订单状态时间、`OrderItem.quantity`、`OrderItem.lineSubtotalFen`、选项快照、材料实际成本及来源 | 在字段契约中明确派生公式、快照写入时机和一致性校验。 | 待确认 |
+| T11 | 订单计算与快照字段 | `Order.subtotalFen`、订单状态时间、`OrderItem.quantity`、`OrderItem.lineSubtotalFen`、选项名称快照、材料实际成本及来源 | 在字段契约中明确派生公式、快照写入时机和一致性校验。 | 待确认 |
 
 ## 8. 已明确但尚未实现
 
@@ -441,8 +459,8 @@
 - 当前 Migration 目录不存在。
 - 不进入 P1-02-B。
 - 不生成数据库变更，不连接真实 MySQL。
-- 下一步先由 ChatGPT 独立审查本决策文档，再由架构负责人确认 T1-T11。
+- 下一步等待独立审查；剩余技术项 T1、T2、T3、T4、T8、T9、T10、T11 仍需架构负责人确认。
 
 ## 9. 决策生效边界
 
-A1-A9 从本文件记录起作为后续字段契约的业务输入。任何与旧 V1.2、旧 P1-02-A 报告或旧实施计划冲突的内容，以本文件和后续正式字段契约为准；在 Schema 尚未修改前，不得把目标字段集合误报为当前已实现状态。
+A1-A9 以及 T5-T7 从本文件记录起作为后续字段契约的业务输入。任何与旧 V1.2、旧 P1-02-A 报告或旧实施计划冲突的内容，以本文件和后续正式字段契约为准；在 Schema 尚未修改前，不得把目标字段集合误报为当前已实现状态。
