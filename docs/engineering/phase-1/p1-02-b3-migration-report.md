@@ -4,6 +4,8 @@
 
 状态：Migration SQL 已生成并通过静态契约检查；真实 MySQL 8.4 执行未验证。
 
+独立审查修订：在 `2deb8e5` 基础上补齐 `VariantRecipe.quantity > 0`，并将 Migration 检查器升级为核对全部 CHECK 的规范化表达式。
+
 ## 1. 本轮范围
 
 本轮只把已冻结的 Prisma Schema 落为 Migration SQL，并建立可重复执行的 SQL 结构检查。
@@ -69,34 +71,36 @@ npx prisma migrate diff `
 - 生成列
 - 优惠分摊结构
 
-共 21 个 CHECK：
+共 22 个 CHECK：
 
 1. `chk_stores_business_day_cutoff_minute`
 2. `chk_product_variants_price_fen_nonnegative`
-3. `chk_materials_nonnegative_balances`
-4. `chk_materials_version_positive`
-5. `chk_stock_movements_balance`
-6. `chk_stock_movements_direction`
-7. `chk_stock_movements_cost_nonnegative`
-8. `chk_loss_records_values_nonnegative`
-9. `chk_dining_sessions_version_positive`
-10. `chk_dining_sessions_closed_fields`
-11. `chk_orders_version_positive`
-12. `chk_orders_amounts`
-13. `chk_orders_channel_session`
-14. `chk_order_items_values`
-15. `chk_order_item_materials_quantities`
-16. `chk_order_item_materials_cost_pair`
-17. `chk_payment_records_target_xor`
-18. `chk_payment_records_amount_positive`
-19. `chk_payment_records_void_audit`
-20. `chk_refund_records_amount_positive`
-21. `chk_refund_records_void_audit`
+3. `chk_variant_recipes_quantity_positive`
+4. `chk_materials_nonnegative_balances`
+5. `chk_materials_version_positive`
+6. `chk_stock_movements_balance`
+7. `chk_stock_movements_direction`
+8. `chk_stock_movements_cost_nonnegative`
+9. `chk_loss_records_values_nonnegative`
+10. `chk_dining_sessions_version_positive`
+11. `chk_dining_sessions_closed_fields`
+12. `chk_orders_version_positive`
+13. `chk_orders_amounts`
+14. `chk_orders_channel_session`
+15. `chk_order_items_values`
+16. `chk_order_item_materials_quantities`
+17. `chk_order_item_materials_cost_pair`
+18. `chk_payment_records_target_xor`
+19. `chk_payment_records_amount_positive`
+20. `chk_payment_records_void_audit`
+21. `chk_refund_records_amount_positive`
+22. `chk_refund_records_void_audit`
 
 覆盖范围包括：
 
 - 营业日切点范围。
 - 商品规格价格非负。
+- 基础配方用量必须大于 0。
 - 材料在手、预占、平均成本及版本边界。
 - 六类库存流水的数量/预占方向。
 - 库存余额及 `reserved <= on_hand`。
@@ -120,12 +124,12 @@ npx prisma migrate diff `
 - 21 个唯一索引的列组合。
 - 24 个普通索引的列组合。
 - 46 个外键的目标列、`ON DELETE RESTRICT` 和 `ON UPDATE CASCADE`。
-- 21 个 CHECK 的名称、所在表和数量。
+- 22 个 CHECK 的名称、所在表、数量和规范化表达式。
 - Migration 目录集合和 `migration_lock.toml` provider。
 - 初始迁移中的破坏性 DDL、DML、触发器或生成列。
 - 约束迁移中仅允许 `ALTER TABLE ... ADD CONSTRAINT ... CHECK`。
 - 括号和语句结构。
-- 10 个变异测试：缺表、错类型、多列、级联删除、缺唯一索引、缺普通索引、触发器、缺 CHECK、DML、括号不闭合。
+- 11 个变异测试：缺表、错类型、多列、级联删除、缺唯一索引、缺普通索引、触发器、缺 CHECK、篡改 CHECK 表达式、DML、括号不闭合。
 
 执行入口：
 
@@ -160,7 +164,7 @@ npm run prisma:check-migrations --workspace @sanweichawu/backend
 ```text
 Prisma schema valid
 PASS: contract + 17 self-tests (21 models, 202 physical fields, 92 relations, 22 deletions, 8 composite uniques, 46 foreign keys, 17 enums)
-PASS: migration SQL contract + 10 self-tests (21 tables, 202 columns, 21 unique indexes, 24 ordinary indexes, 46 foreign keys, 21 checks)
+PASS: migration SQL contract + 11 self-tests (21 tables, 202 columns, 21 unique indexes, 24 ordinary indexes, 46 foreign keys, 22 checks)
 ```
 
 Schema format 后 `git diff -- backend/prisma/schema.prisma` 为空。
@@ -208,7 +212,7 @@ MySQL/MariaDB Windows 服务: 无
 - `CHECK` 的真实拒绝行为。
 - Prisma `migrate deploy` 的迁移登记和第二次执行 no-op。
 - MySQL DDL 隐式提交后的失败恢复。
-- 21 张表、46 个外键、21 个 CHECK 的 `information_schema` 回读。
+- 21 张表、46 个外键、22 个 CHECK 的 `information_schema` 回读。
 - 迁移后的业务边界、事务和并发测试。
 
 这些验证留到 P1-02-B4，并必须在真实 MySQL 8.4 环境执行。

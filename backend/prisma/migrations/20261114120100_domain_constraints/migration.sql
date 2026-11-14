@@ -15,6 +15,10 @@ ALTER TABLE `product_variants`
   ADD CONSTRAINT `chk_product_variants_price_fen_nonnegative`
   CHECK (`price_fen` >= 0);
 
+ALTER TABLE `variant_recipes`
+  ADD CONSTRAINT `chk_variant_recipes_quantity_positive`
+  CHECK (`quantity` > 0);
+
 ALTER TABLE `materials`
   ADD CONSTRAINT `chk_materials_nonnegative_balances`
   CHECK (

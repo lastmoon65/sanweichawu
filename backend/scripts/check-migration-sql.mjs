@@ -13,34 +13,127 @@ const EXPECTED_COLUMNS = 202;
 const EXPECTED_FOREIGN_KEYS = 46;
 const EXPECTED_UNIQUE_INDEXES = 21;
 const EXPECTED_INDEXES = 24;
-const EXPECTED_CHECKS = 21;
-const EXPECTED_SELF_TESTS = 10;
+const EXPECTED_CHECK_COUNT = 22;
+const EXPECTED_SELF_TESTS = 11;
 
-const EXPECTED_CHECKS_BY_TABLE = {
-  stores: ['chk_stores_business_day_cutoff_minute'],
-  product_variants: ['chk_product_variants_price_fen_nonnegative'],
-  materials: ['chk_materials_nonnegative_balances', 'chk_materials_version_positive'],
-  stock_movements: [
-    'chk_stock_movements_balance',
-    'chk_stock_movements_direction',
-    'chk_stock_movements_cost_nonnegative',
-  ],
-  loss_records: ['chk_loss_records_values_nonnegative'],
-  dining_sessions: ['chk_dining_sessions_version_positive', 'chk_dining_sessions_closed_fields'],
-  orders: ['chk_orders_version_positive', 'chk_orders_amounts', 'chk_orders_channel_session'],
-  order_items: ['chk_order_items_values'],
-  order_item_materials: [
-    'chk_order_item_materials_quantities',
-    'chk_order_item_materials_cost_pair',
-  ],
-  payment_records: [
-    'chk_payment_records_target_xor',
-    'chk_payment_records_amount_positive',
-    'chk_payment_records_void_audit',
-  ],
-  refund_records: ['chk_refund_records_amount_positive', 'chk_refund_records_void_audit'],
+const EXPECTED_CHECKS = {
+  chk_stores_business_day_cutoff_minute: {
+    table: 'stores',
+    expression: '(`business_day_cutoff_minute`BETWEEN0AND1439)',
+  },
+  chk_product_variants_price_fen_nonnegative: {
+    table: 'product_variants',
+    expression: '(`price_fen`>=0)',
+  },
+  chk_variant_recipes_quantity_positive: {
+    table: 'variant_recipes',
+    expression: '(`quantity`>0)',
+  },
+  chk_materials_nonnegative_balances: {
+    table: 'materials',
+    expression:
+      '(`on_hand`>=0AND`reserved`>=0AND`average_cost_per_unit`>=0AND`reserved`<=`on_hand`)',
+  },
+  chk_materials_version_positive: {
+    table: 'materials',
+    expression: '(`version`>0)',
+  },
+  chk_stock_movements_balance: {
+    table: 'stock_movements',
+    expression: '(`on_hand_after`>=0AND`reserved_after`>=0AND`reserved_after`<=`on_hand_after`)',
+  },
+  chk_stock_movements_direction: {
+    table: 'stock_movements',
+    expression:
+      "((`movement_type`='OPENING_BALANCE'AND`quantity_delta`>=0AND`reserved_delta`=0)OR(`movement_type`='STOCK_IN'AND`quantity_delta`>0AND`reserved_delta`=0)OR(`movement_type`='RESERVE'AND`quantity_delta`=0AND`reserved_delta`>0)OR(`movement_type`='RELEASE'AND`quantity_delta`=0AND`reserved_delta`<0)OR(`movement_type`='CONSUME'AND`quantity_delta`<0AND`reserved_delta`<0AND`quantity_delta`=`reserved_delta`)OR(`movement_type`='ADJUST'AND`quantity_delta`<>0AND`reserved_delta`=0))",
+  },
+  chk_stock_movements_cost_nonnegative: {
+    table: 'stock_movements',
+    expression:
+      '((`unit_cost_snapshot`ISNULLOR`unit_cost_snapshot`>=0)AND(`total_cost_snapshot`ISNULLOR`total_cost_snapshot`>=0))',
+  },
+  chk_loss_records_values_nonnegative: {
+    table: 'loss_records',
+    expression: '(`quantity`>0AND`unit_cost_snapshot`>=0AND`loss_cost_snapshot`>=0)',
+  },
+  chk_dining_sessions_version_positive: {
+    table: 'dining_sessions',
+    expression: '(`version`>0)',
+  },
+  chk_dining_sessions_closed_fields: {
+    table: 'dining_sessions',
+    expression:
+      "((`status`='OPEN'AND`closed_at`ISNULLAND`closed_by_staff_id`ISNULL)OR(`status`='CLOSED'AND`closed_at`ISNOTNULL))",
+  },
+  chk_orders_version_positive: {
+    table: 'orders',
+    expression: '(`version`>0)',
+  },
+  chk_orders_amounts: {
+    table: 'orders',
+    expression: '(`subtotal_fen`>=0AND`total_amount_fen`>=0AND`total_amount_fen`=`subtotal_fen`)',
+  },
+  chk_orders_channel_session: {
+    table: 'orders',
+    expression:
+      "((`channel`='DINE'AND`session_id`ISNOTNULL)OR(`channel`='TAKEAWAY'AND`session_id`ISNULL))",
+  },
+  chk_order_items_values: {
+    table: 'order_items',
+    expression:
+      '(`quantity`>0AND`unit_price_fen`>=0AND`line_subtotal_fen`=`unit_price_fen`*`quantity`)',
+  },
+  chk_order_item_materials_quantities: {
+    table: 'order_item_materials',
+    expression: '(`quantity_per_item`>=0AND`total_quantity`>=0)',
+  },
+  chk_order_item_materials_cost_pair: {
+    table: 'order_item_materials',
+    expression:
+      '((`actual_unit_cost_snapshot`ISNULLAND`actual_total_cost_snapshot`ISNULL)OR(`actual_unit_cost_snapshot`ISNOTNULLAND`actual_unit_cost_snapshot`>=0AND`actual_total_cost_snapshot`ISNOTNULLAND`actual_total_cost_snapshot`>=0))',
+  },
+  chk_payment_records_target_xor: {
+    table: 'payment_records',
+    expression: '((`session_id`ISNULL)<>(`order_id`ISNULL))',
+  },
+  chk_payment_records_amount_positive: {
+    table: 'payment_records',
+    expression: '(`amount_fen`>0)',
+  },
+  chk_payment_records_void_audit: {
+    table: 'payment_records',
+    expression:
+      "((`status`='ACTIVE'AND`voided_at`ISNULLAND`voided_by_staff_id`ISNULLAND`void_reason`ISNULL)OR(`status`='VOIDED'AND`voided_at`ISNOTNULLAND`voided_by_staff_id`ISNOTNULLAND`void_reason`ISNOTNULL))",
+  },
+  chk_refund_records_amount_positive: {
+    table: 'refund_records',
+    expression: '(`amount_fen`>0)',
+  },
+  chk_refund_records_void_audit: {
+    table: 'refund_records',
+    expression:
+      "((`status`='ACTIVE'AND`voided_at`ISNULLAND`voided_by_staff_id`ISNULLAND`void_reason`ISNULL)OR(`status`='VOIDED'AND`voided_at`ISNOTNULLAND`voided_by_staff_id`ISNOTNULLAND`void_reason`ISNOTNULL))",
+  },
 };
 
+function normalizeCheckExpression(expression) {
+  let normalized = expression.replace(/\s+/g, '');
+  while (normalized.startsWith('(') && normalized.endsWith(')')) {
+    let depth = 0;
+    let enclosesWholeExpression = true;
+    for (let index = 0; index < normalized.length; index += 1) {
+      if (normalized[index] === '(') depth += 1;
+      if (normalized[index] === ')') depth -= 1;
+      if (depth === 0 && index < normalized.length - 1) {
+        enclosesWholeExpression = false;
+        break;
+      }
+    }
+    if (!enclosesWholeExpression) break;
+    normalized = normalized.slice(1, -1);
+  }
+  return normalized;
+}
 function stripComments(sql) {
   return sql.replace(/^\s*--.*$/gm, '');
 }
@@ -366,51 +459,66 @@ function parseConstraintSql(sql) {
     }
   }
 
-  const constraints = [
-    ...clean.matchAll(/ALTER TABLE `([^`]+)`\s+ADD CONSTRAINT `([^`]+)`\s+CHECK\s*\(/g),
-  ].map((match) => ({ table: match[1], name: match[2] }));
-  if (constraints.length !== EXPECTED_CHECKS) {
-    errors.push(`check count ${constraints.length}`);
-  }
-
-  const expected = new Map();
-  for (const [table, names] of Object.entries(EXPECTED_CHECKS_BY_TABLE)) {
-    for (const name of names) expected.set(name, table);
-  }
-
-  const actual = new Map();
-  for (const constraint of constraints) {
-    if (actual.has(constraint.name)) errors.push(`duplicate check ${constraint.name}`);
-    actual.set(constraint.name, constraint.table);
-    if (expected.get(constraint.name) !== constraint.table) {
-      errors.push(`unexpected check ${constraint.name} on ${constraint.table}`);
-    }
-  }
-  for (const name of expected.keys()) {
-    if (!actual.has(name)) errors.push(`missing check ${name}`);
-  }
-
   const statements = clean
     .split(';')
     .map((statement) => statement.trim())
     .filter(Boolean);
+  const constraints = [];
   for (const statement of statements) {
-    if (!/^ALTER TABLE `[^`]+`\s+ADD CONSTRAINT `[^`]+`\s+CHECK\s*\([\s\S]*\)$/.test(statement)) {
+    const match = statement.match(
+      /^ALTER TABLE `([^`]+)`\s+ADD CONSTRAINT `([^`]+)`\s+CHECK\s*\(([\s\S]*)\)$/,
+    );
+    if (!match) {
       errors.push(`unexpected statement: ${statement.slice(0, 80)}`);
+      continue;
     }
+    constraints.push({
+      table: match[1],
+      name: match[2],
+      expression: normalizeCheckExpression(match[3]),
+    });
+  }
+
+  if (constraints.length !== EXPECTED_CHECK_COUNT) {
+    errors.push(`check count ${constraints.length}`);
+  }
+
+  const actual = new Map();
+  for (const constraint of constraints) {
+    if (actual.has(constraint.name)) {
+      errors.push(`duplicate check ${constraint.name}`);
+      continue;
+    }
+    actual.set(constraint.name, constraint);
+
+    const expected = EXPECTED_CHECKS[constraint.name];
+    if (!expected) {
+      errors.push(`unexpected check ${constraint.name} on ${constraint.table}`);
+      continue;
+    }
+    if (expected.table !== constraint.table) {
+      errors.push(
+        `check table mismatch ${constraint.name}: ${constraint.table} != ${expected.table}`,
+      );
+    }
+    const expectedExpression = normalizeCheckExpression(expected.expression);
+    if (expectedExpression !== constraint.expression) {
+      errors.push(
+        `check expression mismatch ${constraint.name}: ${constraint.expression} != ${expectedExpression}`,
+      );
+    }
+  }
+
+  for (const name of Object.keys(EXPECTED_CHECKS)) {
+    if (!actual.has(name)) errors.push(`missing check ${name}`);
   }
 
   const open = (clean.match(/\(/g) ?? []).length;
   const close = (clean.match(/\)/g) ?? []).length;
   if (open !== close) errors.push(`unbalanced parentheses ${open} != ${close}`);
 
-  if (constraints.length !== EXPECTED_CHECKS) {
-    errors.push(`check count ${constraints.length}`);
-  }
-
   return { errors, constraints };
 }
-
 function validateMigrationSql(schemaText, initialSql, constraintSql) {
   const schemaInfo = parseSchema(schemaText);
   const initial = parseInitialSql(initialSql, schemaInfo);
@@ -485,6 +593,12 @@ function runSelfTests(schemaText, initialSql, constraintSql) {
       initial: initialSql,
       constraints: `${constraintSql}\nDELETE FROM \`payment_records\` WHERE \`id\` = 1;\n`,
       expected: /forbidden operation .*DELETE|constraint migration contains forbidden operation/,
+    },
+    {
+      label: 'tampered check expression',
+      initial: initialSql,
+      constraints: constraintSql.replace('CHECK (`price_fen` >= 0);', 'CHECK (1 = 1);'),
+      expected: /check expression mismatch chk_product_variants_price_fen_nonnegative/,
     },
     {
       label: 'unbalanced constraint',
