@@ -6,7 +6,9 @@
 
 Schema 快照：提交 `17b30ea`；SHA-256 `d38dae5442f64f49c1f4faaf869a85908e8ef2e4e008eb91b87e5ff4caafc44b`
 
-契约状态：**待独立审查**。本文件依据 A1-A9、T1-T11 编制，不修改当前 Schema。
+契约版本：**v1.1（独立审查修订）**
+
+契约状态：**待最终复审**。本文件依据 A1-A9、T1-T11 及本轮独立审查修订意见编制，不修改当前 Schema。
 
 ## 1. 契约范围与状态标记
 
@@ -16,6 +18,16 @@ Schema 快照：提交 `17b30ea`；SHA-256 `d38dae5442f64f49c1f4faaf869a85908e8e
 - “候选”表示 T3/T9 给出了原则，但当前资料没有逐字段指定精确长度、默认值或索引用途；值取自当前 Schema 或按命名推导，必须由独立审查确认。
 - 删除字段的目标 Prisma 类型、MySQL 类型和列名均记为 `—`，不得进入目标 Schema。
 - Prisma 虚拟关系不计入物理字段覆盖统计。
+
+### 独立审查修订索引
+
+| 修订 | 内容 | 对应契约位置 |
+| --- | --- | --- |
+| R1 | `User.openid` 改为非空唯一，确保下单顾客具有真实微信身份 | User 字段表、ACC-USER-ID |
+| R2 | 明确 DINE / TAKEAWAY 与 `sessionId` 的组合完整性 | Order 字段表、第 7.2 节、ACC-ORDER-TARGET |
+| R3 | 补齐六类库存流水的 `quantityDelta` / `reservedDelta` 方向及余额约束 | StockMovement 字段表、第 7.3 节、ACC-LEDGER-SIGN |
+| R4 | 补齐独立损耗与关联库存流水的门店、原料、数量、成本一致性 | LossRecord 字段表、第 7.5 节、ACC-LOSS-MATCH |
+| R5 | 明确 Decimal 运算、ROUND_HALF_UP 落库点和复算边界 | 成本字段表、第 7.8 节、ACC-ROUND |
 
 ## 2. 全局规范
 
@@ -138,13 +150,15 @@ Prisma 模型 PascalCase、字段 camelCase；MySQL 表名和列名 snake_case�
 | 字段 | 结果 | Prisma 类型（目标） | MySQL 类型（目标） | 允许 NULL | 默认/生成 | @map 列名 | 主键/唯一/索引 | 外键目标 / 基数 / onDelete | 决策依据 | 业务说明 / 验收 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `id` | **保留** | `BigInt` | BIGINT | NO（T1） | AUTO_INCREMENT（T1） | `id` | PK | — | T3 + T1 + T10 | 内部主键；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-PK, ACC-API |
-| `openid` | **保留** | `String?` | VARCHAR(128)（长度候选） | YES（候选取自当前结构） | —（候选） | `openid` | UQ(openid) | — | T3 + A1-A9 + T9 + T10 | 微信顾客唯一身份标识；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-UQ |
+| `openid` | **保留** | `String` | VARCHAR(128)（长度候选） | NO（必须登录后才能下单） | —（候选） | `openid` | UQ(openid) | — | A4 + T3 + T9 + T10 + R1 | 微信顾客唯一身份标识；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-UQ, ACC-USER-ID |
 | `unionid` | **删除** | `—` | — | — | — | `—` | — | — | A1-A9 | unionid；ACC-ABS |
 | `nickname` | **删除** | `—` | — | — | — | `—` | — | — | A1-A9 | nickname；ACC-ABS |
 | `avatarUrl` | **删除** | `—` | — | — | — | `—` | — | — | A1-A9 | avatar url；ACC-ABS |
 | `status` | **保留** | `UserStatus` | ENUM('ACTIVE', 'DISABLED') | NO（候选） | ACTIVE（候选） | `status` | IDX1(status)（候选） | — | T3 + A1-A9 + T9 + T10 | 顾客账号启停状态；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-ENUM |
 | `createdAt` | **保留** | `DateTime` | DATETIME(3) | NO（T2） | CURRENT_TIMESTAMP(3)（T2） | `created_at` | — | — | T3 + T2 + T10 | 创建时间；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP |
 | `updatedAt` | **保留** | `DateTime` | DATETIME(3) | NO（T2） | 无数据库默认；Prisma Client 维护（T2） | `updated_at` | — | — | T3 + T2 + T10 | 更新时间；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP |
+
+身份约束：只有具备非空、唯一 `openid` 的登录顾客才能创建订单；`Order.customerUserId` 必须来自服务端登录态，不接受前端自行提供用户 ID。`openid` 的最终 VARCHAR 长度仍为候选，但可空性已由 R1 冻结。
 
 ### Staff
 
@@ -277,7 +291,7 @@ Prisma 模型 PascalCase、字段 camelCase；MySQL 表名和列名 snake_case�
 | `variantId` | **保留** | `BigInt` | BIGINT | NO（候选） | —（候选） | `variant_id` | UQ(variantId, materialId, role; 既有决策) | -> product_variants.id; N:1; onDelete Restrict | T3 + T8 + T9 + T10 | 关联标识；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-UQ, ACC-FK |
 | `materialId` | **保留** | `BigInt` | BIGINT | NO（候选） | —（候选） | `material_id` | UQ(variantId, materialId, role; 既有决策); IDX1(materialId)（候选） | -> materials.id; N:1; onDelete Restrict | T3 + T8 + T9 + T10 | 配方原料；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-UQ, ACC-FK |
 | `role` | **保留** | `RecipeMaterialRole` | ENUM('BASE', 'TAKEAWAY_EXTRA') | NO（候选） | BASE（候选） | `role` | UQ(variantId, materialId, role; 既有决策) | — | T3 + T9 + T10 | 基础或打包耗材；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-UQ, ACC-ENUM |
-| `quantity` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | —（候选） | `quantity` | — | — | T3 + T11 + T10 | 每份配方用量；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
+| `quantity` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | —（候选） | `quantity` | — | — | T3 + T11 + T10 + R5 | 每份配方用量；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-ROUND |
 
 ### RecipeModifier
 
@@ -294,7 +308,7 @@ Prisma 模型 PascalCase、字段 camelCase；MySQL 表名和列名 snake_case�
 | `optionValueId` | **保留** | `BigInt` | BIGINT | NO（候选） | —（候选） | `option_value_id` | UQ(variantId, optionValueId, materialId, targetRole; 既有决策); IDX1(optionValueId)（候选） | -> variant_option_values.id; N:1; onDelete Restrict | T3 + T8 + T9 + T10 | 触发配方调整的选项；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-UQ, ACC-FK |
 | `materialId` | **保留** | `BigInt` | BIGINT | NO（候选） | —（候选） | `material_id` | UQ(variantId, optionValueId, materialId, targetRole; 既有决策); IDX2(materialId)（候选） | -> materials.id; N:1; onDelete Restrict | T3 + T8 + T9 + T10 | 被调整原料；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-UQ, ACC-FK |
 | `targetRole` | **保留** | `RecipeModifierTarget` | ENUM('BASE', 'TAKEAWAY_EXTRA') | NO（候选） | BASE（候选） | `target_role` | UQ(variantId, optionValueId, materialId, targetRole; 既有决策) | — | T3 + T9 + T10 | 调整目标配方角色；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-UQ, ACC-ENUM |
-| `quantityDelta` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | —（候选） | `quantity_delta` | — | — | T3 + T11 + T10 | 固定数量增减；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
+| `quantityDelta` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | —（候选） | `quantity_delta` | — | — | T3 + T11 + T10 + R5 | 固定数量增减；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-ROUND |
 
 ### Material
 
@@ -313,7 +327,7 @@ Prisma 模型 PascalCase、字段 camelCase；MySQL 表名和列名 snake_case�
 | `onHand` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | 0（候选） | `on_hand` | — | — | T3 + T11 + T10 | 当前在手数量；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
 | `reserved` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | 0（候选） | `reserved` | — | — | T3 + T11 + T10 | 当前预占数量；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
 | `warningThreshold` | **删除** | `—` | — | — | — | `—` | — | — | A1-A9 | warning threshold；ACC-ABS |
-| `averageCostPerUnit` | **保留** | `Decimal` | DECIMAL(18,6) | NO（候选） | 0（候选） | `average_cost_per_unit` | — | — | T3 + T11 + T10 | 移动加权平均单位成本；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
+| `averageCostPerUnit` | **保留** | `Decimal` | DECIMAL(18,6) | NO（候选） | 0（候选） | `average_cost_per_unit` | — | — | T3 + T11 + T10 + R5 | 移动加权平均单位成本；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-ROUND |
 | `status` | **保留** | `CommonStatus` | ENUM('ACTIVE', 'DISABLED') | NO（候选） | ACTIVE（候选） | `status` | IDX1(storeId, status)（候选） | — | T3 + A1-A9 + T9 + T10 | 原材料启停状态；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-ENUM |
 | `version` | **保留** | `Int` | INT | NO（候选） | 1（T4） | `version` | — | — | T3 + T4 + T10 | 库存行乐观锁；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
 | `createdAt` | **保留** | `DateTime` | DATETIME(3) | NO（T2） | CURRENT_TIMESTAMP(3)（T2） | `created_at` | — | — | T3 + T2 + T10 | 创建时间；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP |
@@ -336,12 +350,12 @@ Prisma 模型 PascalCase、字段 camelCase；MySQL 表名和列名 snake_case�
 | `storeId` | **保留** | `BigInt` | BIGINT | NO（候选） | —（候选） | `store_id` | IDX1(storeId, movementType, createdAt)（候选） | -> stores.id; N:1; onDelete Restrict | T3 + T8 + T9 + T10 | 所属门店；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-FK |
 | `materialId` | **保留** | `BigInt` | BIGINT | NO（候选） | —（候选） | `material_id` | IDX2(materialId, createdAt)（候选）; IDX3(orderId, materialId, movementType)（候选） | -> materials.id; N:1; onDelete Restrict | T3 + T8 + T9 + T10 | 变动原料；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-FK |
 | `movementType` | **保留** | `StockMovementType` | ENUM('OPENING_BALANCE', 'STOCK_IN', 'RESERVE', 'RELEASE', 'CONSUME', 'ADJUST') | NO（候选） | —（候选） | `movement_type` | IDX1(storeId, movementType, createdAt)（候选）; IDX3(orderId, materialId, movementType)（候选） | — | T3 + T9 + T10 | 库存变动类型；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-ENUM |
-| `quantityDelta` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | 0（候选） | `quantity_delta` | — | — | T3 + T11 + T10 | 在手数量变化；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
-| `reservedDelta` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | 0（候选） | `reserved_delta` | — | — | T3 + T11 + T10 | 预占数量变化；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
-| `onHandAfter` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | —（候选） | `on_hand_after` | — | — | T3 + T11 + T10 | 变动后在手余额；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
-| `reservedAfter` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | —（候选） | `reserved_after` | — | — | T3 + T11 + T10 | 变动后预占余额；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
-| `unitCostSnapshot` | **保留** | `Decimal?` | DECIMAL(18,6) | YES（候选取自当前结构） | —（候选） | `unit_cost_snapshot` | — | — | T3 + T11 + T10 | 变动时单位成本快照；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
-| `totalCostSnapshot` | **保留** | `Decimal?` | DECIMAL(18,6) | YES（候选取自当前结构） | —（候选） | `total_cost_snapshot` | — | — | T3 + T11 + T10 | 变动时总成本快照；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
+| `quantityDelta` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | 0（候选） | `quantity_delta` | CHECK(stock_movement_direction) | — | T3 + T11 + T10 + R3 + R5 | 在手数量变化；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-LEDGER-SIGN, ACC-ROUND |
+| `reservedDelta` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | 0（候选） | `reserved_delta` | CHECK(stock_movement_direction) | — | T3 + T11 + T10 + R3 + R5 | 预占数量变化；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-LEDGER-SIGN, ACC-ROUND |
+| `onHandAfter` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | —（候选） | `on_hand_after` | CHECK(nonnegative_balance) | — | T3 + T11 + T10 + R3 + R5 | 变动后在手余额；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-LEDGER-SIGN, ACC-ROUND |
+| `reservedAfter` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | —（候选） | `reserved_after` | CHECK(nonnegative_balance) | — | T3 + T11 + T10 + R3 + R5 | 变动后预占余额；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-LEDGER-SIGN, ACC-ROUND |
+| `unitCostSnapshot` | **保留** | `Decimal?` | DECIMAL(18,6) | YES（候选取自当前结构） | —（候选） | `unit_cost_snapshot` | — | — | T3 + T11 + T10 + R5 | 变动时单位成本快照；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-ROUND |
+| `totalCostSnapshot` | **保留** | `Decimal?` | DECIMAL(18,6) | YES（候选取自当前结构） | —（候选） | `total_cost_snapshot` | — | — | T3 + T11 + T10 + R5 | 变动时总成本快照；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-ROUND |
 | `orderId` | **保留** | `BigInt?` | BIGINT | YES（候选取自当前结构） | —（候选） | `order_id` | IDX3(orderId, materialId, movementType)（候选） | -> orders.id; N:0..1; onDelete Restrict | T3 + A1-A9 + T8 + T9 + T10 | 来源订单；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-FK |
 | `orderItemId` | **保留** | `BigInt?` | BIGINT | YES（候选取自当前结构） | —（候选） | `order_item_id` | — | -> order_items.id; N:0..1; onDelete Restrict | T3 + A1-A9 + T8 + T10 | 来源订单明细；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-FK |
 | `operatorStaffId` | **保留** | `BigInt?` | BIGINT | YES（候选取自当前结构） | —（候选） | `operator_staff_id` | — | -> staff.id; N:0..1; onDelete Restrict | T3 + A1-A9 + T8 + T10 | 操作员工；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-FK |
@@ -365,10 +379,10 @@ Prisma 模型 PascalCase、字段 camelCase；MySQL 表名和列名 snake_case�
 | `materialId` | **保留** | `BigInt` | BIGINT | NO（候选） | —（候选） | `material_id` | IDX2(materialId, occurredAt)（候选） | -> materials.id; N:1; onDelete Restrict | T3 + T8 + T9 + T10 | 损耗原料；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-FK |
 | `orderId` | **保留** | `BigInt?` | BIGINT | YES（已冻结） | —（候选） | `order_id` | IDX3(orderId)（候选） | -> orders.id; N:0..1; onDelete Restrict | T3 + A1-A9 + T8 + T9 + T10 | 可选来源订单；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-FK |
 | `orderItemId` | **保留** | `BigInt?` | BIGINT | YES（已冻结） | —（候选） | `order_item_id` | — | -> order_items.id; N:0..1; onDelete Restrict | T3 + A1-A9 + T8 + T10 | 可选来源订单明细；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-FK |
-| `stockMovementId` | **保留** | `BigInt?` | BIGINT | YES（已冻结） | —（候选） | `stock_movement_id` | UQ(stockMovementId) | -> stock_movements.id; N:0..1; onDelete Restrict | T3 + A1-A9 + T8 + T9 + T10 | 额外损耗关联库存流水；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-UQ, ACC-FK |
-| `quantity` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | —（候选） | `quantity` | — | — | T3 + T11 + T10 | 损耗数量；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
-| `unitCostSnapshot` | **保留** | `Decimal` | DECIMAL(18,6) | NO（候选） | —（候选） | `unit_cost_snapshot` | — | — | T3 + T11 + T10 | 损耗时单位成本；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
-| `lossCostSnapshot` | **保留** | `Decimal` | DECIMAL(18,6) | NO（候选） | —（候选） | `loss_cost_snapshot` | — | — | T3 + T11 + T10 | 损耗总成本；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
+| `stockMovementId` | **保留** | `BigInt?` | BIGINT | YES（已冻结） | —（候选） | `stock_movement_id` | UQ(stockMovementId) | -> stock_movements.id; N:0..1; onDelete Restrict | T3 + A1-A9 + T8 + T9 + T10 + R4 | 额外损耗关联库存流水；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-UQ, ACC-FK, ACC-LOSS-MATCH |
+| `quantity` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | —（候选） | `quantity` | — | — | T3 + T11 + T10 + R4 + R5 | 损耗数量；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-LOSS-MATCH, ACC-ROUND |
+| `unitCostSnapshot` | **保留** | `Decimal` | DECIMAL(18,6) | NO（候选） | —（候选） | `unit_cost_snapshot` | — | — | T3 + T11 + T10 + R5 | 损耗时单位成本；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-ROUND |
+| `lossCostSnapshot` | **保留** | `Decimal` | DECIMAL(18,6) | NO（候选） | —（候选） | `loss_cost_snapshot` | — | — | T3 + T11 + T10 + R4 + R5 | 损耗总成本；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-LOSS-MATCH, ACC-ROUND |
 | `reason` | **保留** | `String` | VARCHAR(500)（长度候选） | NO（候选） | —（候选） | `reason` | — | — | T3 + A1-A9 + T10 | 损耗原因；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP |
 | `operatorStaffId` | **保留** | `BigInt?` | BIGINT | YES（候选取自当前结构） | —（候选） | `operator_staff_id` | — | -> staff.id; N:0..1; onDelete Restrict | T3 + A1-A9 + T8 + T10 | 登记损耗员工；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-FK |
 | `occurredAt` | **保留** | `DateTime` | DATETIME(3) | NO（候选） | CURRENT_TIMESTAMP(3)（候选；应审查是否使用真实业务事件时间） | `occurred_at` | IDX1(storeId, occurredAt)（候选）; IDX2(materialId, occurredAt)（候选） | — | T3 + T2 + T9 + T10 | 实际损耗时间；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP |
@@ -430,8 +444,8 @@ Prisma 模型 PascalCase、字段 camelCase；MySQL 表名和列名 snake_case�
 | `customerUserId` | **保留** | `BigInt` | BIGINT | NO（候选） | —（候选） | `customer_user_id` | IDX3(customerUserId, createdAt)（候选） | -> users.id; N:1; onDelete Restrict | T3 + T8 + T9 + T10 | 下单顾客；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-FK |
 | `orderNo` | **保留** | `String` | VARCHAR(40)（长度候选） | NO（候选） | —（候选） | `order_no` | UQ(orderNo) | — | T3 + T9 + T10 | 订单编号；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-UQ |
 | `idempotencyKey` | **保留** | `String` | VARCHAR(160)（长度候选） | NO（候选） | —（候选） | `idempotency_key` | UQ(idempotencyKey) | — | T3 + T9 + T10 | 创建订单幂等键；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-UQ |
-| `channel` | **保留** | `OrderChannel` | ENUM('DINE', 'TAKEAWAY') | NO（候选） | —（候选） | `channel` | — | — | T3 + T10 | 堂食或打包；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-ENUM |
-| `sessionId` | **保留** | `BigInt?` | BIGINT | YES（已冻结） | —（候选） | `session_id` | IDX2(sessionId, status)（候选） | -> dining_sessions.id; N:0..1; onDelete Restrict | T3 + T8 + T9 + T10 | 堂食桌单；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-FK |
+| `channel` | **保留** | `OrderChannel` | ENUM('DINE', 'TAKEAWAY') | NO（候选） | —（候选） | `channel` | CHECK(order_channel_session) | — | T3 + T10 + R2 | 堂食或打包；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-ENUM, ACC-ORDER-TARGET |
+| `sessionId` | **保留** | `BigInt?` | BIGINT | YES（已冻结） | —（候选） | `session_id` | IDX2(sessionId, status)（候选）; CHECK(order_channel_session) | -> dining_sessions.id; N:0..1; onDelete Restrict | T3 + T8 + T9 + T10 + R2 | 堂食桌单；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-FK, ACC-ORDER-TARGET |
 | `status` | **保留** | `OrderStatus` | ENUM('PENDING_ACCEPTANCE', 'ACCEPTED', 'PREPARING', 'COMPLETED', 'CANCELLED') | NO（候选） | PENDING_ACCEPTANCE（候选） | `status` | IDX1(storeId, status, createdAt)（候选）; IDX2(sessionId, status)（候选） | — | T3 + T9 + T10 | 订单履约状态；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-ENUM |
 | `subtotalFen` | **保留** | `BigInt` | BIGINT | NO（候选） | —（候选） | `subtotal_fen` | — | — | T3 + T11 + T10 | 明细合计，整数分；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
 | `discountFen` | **删除** | `—` | — | — | — | `—` | — | — | A1-A9 | discount fen；ACC-ABS |
@@ -501,10 +515,10 @@ Prisma 模型 PascalCase、字段 camelCase；MySQL 表名和列名 snake_case�
 | `materialId` | **保留** | `BigInt` | BIGINT | NO（候选） | —（候选） | `material_id` | UQ(orderItemId, materialId, source; 既有决策); IDX1(materialId)（候选） | -> materials.id; N:1; onDelete Restrict | T3 + A1-A9 + T8 + T9 + T10 | 原料追溯来源；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-UQ, ACC-FK |
 | `materialNameSnapshot` | **保留** | `String` | VARCHAR(120)（长度候选） | NO（候选） | —（候选） | `material_name_snapshot` | — | — | T3 + T10 | 原料名称快照；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP |
 | `unitSnapshot` | **保留** | `String` | VARCHAR(20)（长度候选） | NO（候选） | —（候选） | `unit_snapshot` | — | — | T3 + T10 | 原料单位快照；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP |
-| `quantityPerItem` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | —（候选） | `quantity_per_item` | — | — | T3 + T11 + T10 | 每份用量快照；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
-| `totalQuantity` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | —（候选） | `total_quantity` | — | — | T3 + T11 + T10 | 总用量快照；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
-| `actualUnitCostSnapshot` | **保留** | `Decimal?` | DECIMAL(18,6) | YES（已冻结） | —（候选） | `actual_unit_cost_snapshot` | — | — | T3 + T11 + T10 | 实际消耗单位成本；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
-| `actualTotalCostSnapshot` | **保留** | `Decimal?` | DECIMAL(18,6) | YES（已冻结） | —（候选） | `actual_total_cost_snapshot` | — | — | T3 + T11 + T10 | 实际消耗总成本；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC |
+| `quantityPerItem` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | —（候选） | `quantity_per_item` | — | — | T3 + T11 + T10 + R5 | 每份用量快照；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-ROUND |
+| `totalQuantity` | **保留** | `Decimal` | DECIMAL(18,3) | NO（候选） | —（候选） | `total_quantity` | — | — | T3 + T11 + T10 + R5 | 总用量快照；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-ROUND |
+| `actualUnitCostSnapshot` | **保留** | `Decimal?` | DECIMAL(18,6) | YES（已冻结） | —（候选） | `actual_unit_cost_snapshot` | — | — | T3 + T11 + T10 + R5 | 实际消耗单位成本；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-ROUND |
+| `actualTotalCostSnapshot` | **保留** | `Decimal?` | DECIMAL(18,6) | YES（已冻结） | —（候选） | `actual_total_cost_snapshot` | — | — | T3 + T11 + T10 + R5 | 实际消耗总成本；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-CALC, ACC-ROUND |
 | `source` | **保留** | `OrderItemMaterialSource` | ENUM('BASE', 'TAKEAWAY_EXTRA', 'MODIFIER') | NO（候选） | —（候选） | `source` | UQ(orderItemId, materialId, source; 既有决策) | — | T3 + T11 + T9 + T10 | 基础/打包耗材/选项调整来源；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-UQ, ACC-ENUM |
 
 ### PaymentRecord
@@ -664,7 +678,45 @@ session_id IS NULL XOR order_id IS NULL
 
 数据库通过 CHECK 保证 XOR；服务层在事务内根据收款目标锁定对应 Session/Order，校验渠道、门店、未结金额和幂等键。任何一侧都不允许依赖前端传入归属。
 
-### 7.2 库存与损耗成本
+### 7.2 订单渠道与桌单关联
+
+| channel | session_id | 含义 |
+| --- | --- | --- |
+| DINE | NOT NULL | 堂食订单必须挂活动桌单 |
+| TAKEAWAY | NULL | 打包订单不得挂桌单 |
+
+数据库目标 CHECK：
+
+```text
+(channel = 'DINE' AND session_id IS NOT NULL)
+OR
+(channel = 'TAKEAWAY' AND session_id IS NULL)
+```
+
+服务层还必须在创建堂食订单时锁定并校验桌单为 OPEN、桌单属于当前 Store，并保证订单与该桌单同店。数据库 CHECK 负责最终组合完整性，服务层负责活动桌单和归属语义。
+
+### 7.3 库存流水方向规则
+
+| movementType | quantityDelta | reservedDelta | 额外语义 |
+| --- | --- | --- | --- |
+| OPENING_BALANCE | >= 0 | = 0 | 期初建账 |
+| STOCK_IN | > 0 | = 0 | 采购入库 |
+| RESERVE | = 0 | > 0 | 仅增加预占 |
+| RELEASE | = 0 | < 0 | 仅释放预占 |
+| CONSUME | < 0 | < 0 | 绝对值必须相等 |
+| ADJUST | != 0 | = 0 | 正负方向由盘点或独立损耗决定 |
+
+余额约束：
+
+```text
+on_hand_after >= 0
+reserved_after >= 0
+reserved_after <= on_hand_after
+```
+
+变化量字段允许为负数，不能套用非负 CHECK；非负约束只作用于变动后的余额。ADJUST 的正负方向必须由业务场景明确，独立损耗使用负数量。
+
+### 7.4 库存与损耗成本
 
 - 已计入订单材料消耗的报损：`LossRecord.stockMovementId IS NULL`，不再次扣库存，不再次累计成本。
 - 独立损耗：同事务写入 `StockMovement(ADJUST, quantityDelta = -lossQty)` 和 `LossRecord`，并填写 `stockMovementId`。
@@ -672,7 +724,30 @@ session_id IS NULL XOR order_id IS NULL
 - `OrderItemMaterial.actualTotalCostSnapshot` 只用于订单维度下钻和交叉核对，不重复累计。
 - 所有数量使用 `Decimal(18,3)`，所有单位/总成本使用 `Decimal(18,6)`，禁止 JS 浮点计算。
 
-### 7.3 历史快照生成时点
+### 7.5 独立损耗关联一致性
+
+当 `LossRecord.stockMovementId` 非空时，服务层必须在同一事务内保证：
+
+```text
+LossRecord.storeId = StockMovement.storeId
+LossRecord.materialId = StockMovement.materialId
+StockMovement.movementType = 'ADJUST'
+StockMovement.quantityDelta = -LossRecord.quantity
+StockMovement.totalCostSnapshot = LossRecord.lossCostSnapshot
+LossRecord.stockMovementId 唯一
+```
+
+独立损耗还必须满足：
+
+```text
+LossRecord.quantity > 0
+LossRecord.unitCostSnapshot >= 0
+LossRecord.lossCostSnapshot >= 0
+```
+
+数据库负责 FK、唯一约束和余额约束；跨表字段等式由服务事务及集成测试保证。订单内已计入 CONSUME 的报损必须保持 `stockMovementId = NULL`，不得额外扣库存或重复累计成本。
+
+### 7.6 历史快照生成时点
 
 下单时冻结：
 
@@ -694,7 +769,7 @@ session_id IS NULL XOR order_id IS NULL
 
 历史展示、计价和成本追溯只读快照，不得通过当前商品、规格、选项或配方覆盖。
 
-### 7.4 金额与数量
+### 7.7 金额与数量
 
 - 金额全部使用整数分，禁止 Float/Double。
 - 明细单价 = 规格价格 + 所有选项价格差。
@@ -703,6 +778,18 @@ session_id IS NULL XOR order_id IS NULL
 - 订单小计 = 所有明细金额之和。
 - 首版订单总额 = 订单小计。
 - 数量使用整数或 `Decimal(18,3)`；成本使用 `Decimal(18,6)`。
+
+### 7.8 成本与数量舍入
+
+1. 金额使用整数分，整条金额链路不引入小数舍入。
+2. 配方基础用量与选项调整量使用 Decimal 运算；每份用量按 ROUND_HALF_UP 保留 3 位小数后写入数量快照。
+3. 总用量 = 每份用量 × 商品数量，使用 Decimal 精确计算，再按 ROUND_HALF_UP 保留 3 位写入。
+4. 入库时移动加权单位成本 = (原在手数量 × 原平均成本 + 入库数量 × 入库单位成本) ÷ (原在手数量 + 入库数量)，使用 Decimal 精确计算，再按 ROUND_HALF_UP 保留 6 位写入 `Material.averageCostPerUnit`；原在手数量为 0 时直接采用本次入库单位成本并保留 6 位。
+5. 实际总成本 = 消耗前单位成本 × 消耗数量，Decimal 精确计算后按 ROUND_HALF_UP 保留 6 位写入；禁止对已舍入总成本再次相乘。
+6. `OrderItemMaterial.actualUnitCostSnapshot` 必须等于本次消耗使用的单位成本；`actualTotalCostSnapshot` 与共同统计范围内的 `StockMovement(CONSUME).totalCostSnapshot` 汇总必须一致。
+7. 对账比较以最终 DECIMAL(18,6) 值做精确比较，不设置模糊容差。
+
+示例：单位成本 12.345678 元/kg × 0.333 kg = 4.111110774 元，落库前 ROUND_HALF_UP 至 6 位为 4.111111 元。
 
 ## 8. 可重复计算示例
 
@@ -765,6 +852,11 @@ session_id IS NULL XOR order_id IS NULL
 | ACC-ENUM | 写入未声明枚举值必须失败；默认枚举值符合契约。 |
 | ACC-CALC | 使用固定样例复算金额、数量、成本、快照和状态统计。 |
 | ACC-ABS | 目标 Schema 中字段、列、旧唯一约束和相关索引均已移除。 |
+| ACC-USER-ID | `users.openid` 必须非空且唯一；无法取得真实微信身份时禁止创建可下单 User。 |
+| ACC-ORDER-TARGET | DINE 必须有 session_id，TAKEAWAY 必须无 session_id；非法组合被数据库和服务层拒绝。 |
+| ACC-LEDGER-SIGN | 六类 movementType 的方向必须符合规则表；余额不得为负，reserved 不得大于 onHand。 |
+| ACC-LOSS-MATCH | 独立损耗与关联库存流水的门店、原料、数量、总成本必须一致。 |
+| ACC-ROUND | 按 ROUND_HALF_UP 在指定落库点舍入，结果与可重复样例一致。 |
 
 ## 10. 待独立审查的候选属性
 
