@@ -11,7 +11,10 @@
     "build": "node scripts/build.mjs",
     "start": "node dist/main.js",
     "start:dev": "tsx watch src/main.ts",
-    "test": "vitest run --config vitest.config.ts"
+    "test": "vitest run --config vitest.config.ts",
+    "prisma:format": "prisma format --schema prisma/schema.prisma",
+    "prisma:validate": "prisma validate --schema prisma/schema.prisma",
+    "prisma:check-contract": "node scripts/check-schema.mjs"
   },
   "dependencies": {
     "@nestjs/common": "12.5.0",
@@ -22,6 +25,7 @@
   },
   "devDependencies": {
     "@nestjs/testing": "12.5.0",
+    "prisma": "6.19.0",
     "tsx": "4.23.15",
     "typescript": "6.0.3",
     "vitest": "5.1.0"

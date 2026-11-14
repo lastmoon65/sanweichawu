@@ -2,7 +2,13 @@
 
 本仓库包含正式工程骨架（P1-01）和既有产品原型。正式工程位于 `backend/`、`web-admin/`、`mini-program/`。
 
-## 0. 正式工程 P1-01
+## 0. 正式工程当前状态
+
+P1-01 已完成；P1-02-A 的 21 模型 Prisma Schema 已建立并通过 Prisma 6.19.0 format/validate。尚未生成或执行 Migration，真实 MySQL 8 验证未开始。
+
+- [P1-02-A Schema 交付报告](docs/engineering/phase-1/p1-02-a-schema-report.md)
+
+## 0.1 P1-01 工程基线
 
 状态：已完成，等待 P1-01 人工验收。
 

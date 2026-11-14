@@ -4,12 +4,13 @@
 修订日期：2026-11-13
 修订起点：`8ec84a8`
 
-本目录只包含第一阶段设计，不代表工程代码已经实现。
+本目录包含第一阶段设计，以及 P1-01/P1-02-A 的实现验证记录。
 
 ## 当前进度
 
-- P1-01 Node.js 22 工具链与 npm workspace：已完成，等待验收。
-- P1-02 及以后：未开始。
+- P1-01 Node.js 22 工具链与 npm workspace：已完成。
+- P1-02-A Prisma Schema：已完成 format/validate，尚未生成 Migration。
+- P1-02-B Migration 与真实 MySQL 验证：未开始。
 
 ## 评审顺序
 
@@ -19,6 +20,7 @@
 4. [MySQL 8 验证方案](./04-mysql-verification-plan.md)
 5. [第一阶段实施计划](./05-implementation-plan.md)
 6. [P1-01 验证记录](./p1-01-verification.md)
+7. [P1-02-A Prisma Schema 交付报告](./p1-02-a-schema-report.md)
 
 ## 已接受的评审意见
 

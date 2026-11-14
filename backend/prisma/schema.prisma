@@ -1,0 +1,587 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum StoreStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum StaffRole {
+  OWNER
+  MANAGER
+  STAFF
+}
+
+enum StaffStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum CommonStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum InventoryMode {
+  MANAGED
+  UNMANAGED
+}
+
+enum RecipeMaterialRole {
+  BASE
+  TAKEAWAY_EXTRA
+}
+
+enum RecipeModifierTarget {
+  BASE
+  TAKEAWAY_EXTRA
+}
+
+enum OptionSelectionType {
+  SINGLE
+  MULTI
+}
+
+enum StockMovementType {
+  OPENING_BALANCE
+  STOCK_IN
+  RESERVE
+  RELEASE
+  CONSUME
+  ADJUST
+}
+
+enum OrderItemMaterialSource {
+  BASE
+  TAKEAWAY_EXTRA
+  MODIFIER
+}
+
+enum OrderChannel {
+  DINE
+  TAKEAWAY
+}
+
+enum OrderStatus {
+  PENDING_ACCEPTANCE
+  ACCEPTED
+  PREPARING
+  COMPLETED
+  CANCELLED
+}
+
+enum DiningSessionStatus {
+  OPEN
+  CLOSED
+}
+
+enum PaymentMethod {
+  CASH
+  WECHAT
+  ALIPAY
+  POS
+  OTHER
+}
+
+enum PaymentStatus {
+  ACTIVE
+  VOIDED
+}
+
+enum RefundStatus {
+  ACTIVE
+  VOIDED
+}
+
+model Store {
+  id                          BigInt      @id @default(autoincrement())
+  name                        String      @db.VarChar(120)
+  status                      StoreStatus @default(ACTIVE)
+  timezone                    String      @default("Asia/Shanghai") @db.VarChar(64)
+  businessDayCutoffMinute     Int         @default(0)
+  pendingReminderMinutes      Int         @default(10)
+  maxPendingOrdersPerCustomer Int         @default(5)
+  maxPendingOrdersPerSession  Int         @default(30)
+  createdAt                   DateTime    @default(now())
+  updatedAt                   DateTime    @updatedAt
+  deletedAt                   DateTime?
+
+  staff          Staff[]
+  categories     Category[]
+  products       Product[]
+  materials      Material[]
+  tables         DiningTable[]
+  sessions       DiningSession[]
+  orders         Order[]
+  stockMovements StockMovement[]
+  lossRecords    LossRecord[]
+  payments       PaymentRecord[]
+
+  @@index([status, deletedAt])
+  @@map("stores")
+}
+
+model User {
+  id        BigInt     @id @default(autoincrement())
+  openid    String?    @unique @db.VarChar(128)
+  unionid   String?    @db.VarChar(128)
+  nickname  String?    @db.VarChar(80)
+  avatarUrl String?    @db.VarChar(512)
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  orders Order[]
+
+  @@index([status])
+  @@map("users")
+}
+
+model Staff {
+  id        BigInt      @id @default(autoincrement())
+  storeId   BigInt
+  name      String      @db.VarChar(80)
+  role      StaffRole
+  status    StaffStatus @default(ACTIVE)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  store          Store           @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  stockMovements StockMovement[] @relation("StockOperator")
+  lossRecords    LossRecord[]    @relation("LossOperator")
+  payments       PaymentRecord[] @relation("PaymentOperator")
+  voidedPayments PaymentRecord[] @relation("PaymentVoidOperator")
+  refunds        RefundRecord[]  @relation("RefundOperator")
+  voidedRefunds  RefundRecord[]  @relation("RefundVoidOperator")
+  closedSessions DiningSession[] @relation("SessionCloser")
+
+  @@index([storeId, status, role])
+  @@map("staff")
+}
+
+model Category {
+  id        BigInt       @id @default(autoincrement())
+  storeId   BigInt
+  name      String       @db.VarChar(80)
+  sortOrder Int          @default(0)
+  status    CommonStatus @default(ACTIVE)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  deletedAt DateTime?
+
+  store    Store     @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  products Product[]
+
+  @@index([storeId, status, sortOrder])
+  @@map("categories")
+}
+
+model Product {
+  id          BigInt       @id @default(autoincrement())
+  storeId     BigInt
+  categoryId  BigInt
+  name        String       @db.VarChar(120)
+  description String?      @db.Text
+  imageUrl    String?      @db.VarChar(512)
+  status      CommonStatus @default(ACTIVE)
+  sortOrder   Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+
+  store      Store            @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  category   Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  variants   ProductVariant[]
+  orderItems OrderItem[]
+
+  @@index([storeId, categoryId, status, sortOrder])
+  @@map("products")
+}
+
+model ProductVariant {
+  id            BigInt        @id @default(autoincrement())
+  productId     BigInt
+  name          String        @db.VarChar(80)
+  priceFen      BigInt
+  inventoryMode InventoryMode @default(MANAGED)
+  status        CommonStatus  @default(ACTIVE)
+  sortOrder     Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+
+  product         Product              @relation(fields: [productId], references: [id], onDelete: Restrict)
+  optionGroups    VariantOptionGroup[]
+  variantRecipes  VariantRecipe[]
+  recipeModifiers RecipeModifier[]
+  orderItems      OrderItem[]
+
+  @@index([productId, status, sortOrder])
+  @@map("product_variants")
+}
+
+model VariantOptionGroup {
+  id            BigInt              @id @default(autoincrement())
+  variantId     BigInt
+  code          String              @db.VarChar(40)
+  name          String              @db.VarChar(80)
+  selectionType OptionSelectionType @default(SINGLE)
+  required      Boolean             @default(true)
+  sortOrder     Int                 @default(0)
+  status        CommonStatus        @default(ACTIVE)
+
+  variant ProductVariant       @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  values  VariantOptionValue[]
+
+  @@unique([variantId, code])
+  @@index([variantId, sortOrder])
+  @@map("variant_option_groups")
+}
+
+model VariantOptionValue {
+  id            BigInt       @id @default(autoincrement())
+  optionGroupId BigInt
+  code          String       @db.VarChar(40)
+  name          String       @db.VarChar(80)
+  priceDeltaFen BigInt       @default(0)
+  sortOrder     Int          @default(0)
+  status        CommonStatus @default(ACTIVE)
+
+  optionGroup      VariantOptionGroup @relation(fields: [optionGroupId], references: [id], onDelete: Restrict)
+  recipeModifiers  RecipeModifier[]
+  orderItemOptions OrderItemOption[]
+
+  @@unique([optionGroupId, code])
+  @@index([optionGroupId, sortOrder])
+  @@map("variant_option_values")
+}
+
+model VariantRecipe {
+  id         BigInt             @id @default(autoincrement())
+  variantId  BigInt
+  materialId BigInt
+  role       RecipeMaterialRole @default(BASE)
+  quantity   Decimal            @db.Decimal(18, 3)
+
+  variant  ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  material Material       @relation(fields: [materialId], references: [id], onDelete: Restrict)
+
+  @@unique([variantId, materialId, role])
+  @@index([materialId])
+  @@map("variant_recipes")
+}
+
+model RecipeModifier {
+  id            BigInt               @id @default(autoincrement())
+  variantId     BigInt
+  optionValueId BigInt
+  materialId    BigInt
+  targetRole    RecipeModifierTarget @default(BASE)
+  quantityDelta Decimal              @db.Decimal(18, 3)
+
+  variant     ProductVariant     @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  optionValue VariantOptionValue @relation(fields: [optionValueId], references: [id], onDelete: Restrict)
+  material    Material           @relation(fields: [materialId], references: [id], onDelete: Restrict)
+
+  @@unique([variantId, optionValueId, materialId, targetRole])
+  @@index([optionValueId])
+  @@index([materialId])
+  @@map("recipe_modifiers")
+}
+
+model Material {
+  id                 BigInt       @id @default(autoincrement())
+  storeId            BigInt
+  name               String       @db.VarChar(120)
+  unit               String       @db.VarChar(20)
+  onHand             Decimal      @default(0) @db.Decimal(18, 3)
+  reserved           Decimal      @default(0) @db.Decimal(18, 3)
+  warningThreshold   Decimal      @default(0) @db.Decimal(18, 3)
+  averageCostPerUnit Decimal      @default(0) @db.Decimal(18, 6)
+  status             CommonStatus @default(ACTIVE)
+  version            Int          @default(1)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  deletedAt          DateTime?
+
+  store              Store               @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  variantRecipes     VariantRecipe[]
+  recipeModifiers    RecipeModifier[]
+  stockMovements     StockMovement[]
+  lossRecords        LossRecord[]
+  orderItemMaterials OrderItemMaterial[]
+
+  @@index([storeId, status, deletedAt])
+  @@map("materials")
+}
+
+model StockMovement {
+  id                BigInt            @id @default(autoincrement())
+  movementNo        String            @unique @db.VarChar(64)
+  dedupeKey         String            @unique @db.VarChar(160)
+  storeId           BigInt
+  materialId        BigInt
+  movementType      StockMovementType
+  quantityDelta     Decimal           @default(0) @db.Decimal(18, 3)
+  reservedDelta     Decimal           @default(0) @db.Decimal(18, 3)
+  onHandAfter       Decimal           @db.Decimal(18, 3)
+  reservedAfter     Decimal           @db.Decimal(18, 3)
+  unitCostSnapshot  Decimal?          @db.Decimal(18, 6)
+  totalCostSnapshot Decimal?          @db.Decimal(18, 6)
+  orderId           BigInt?
+  orderItemId       BigInt?
+  operatorStaffId   BigInt?
+  reason            String?           @db.VarChar(500)
+  createdAt         DateTime          @default(now())
+
+  store         Store       @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  material      Material    @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  order         Order?      @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  orderItem     OrderItem?  @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  operatorStaff Staff?      @relation("StockOperator", fields: [operatorStaffId], references: [id], onDelete: Restrict)
+  lossRecord    LossRecord?
+
+  @@index([storeId, movementType, createdAt])
+  @@index([materialId, createdAt])
+  @@index([orderId, materialId, movementType])
+  @@map("stock_movements")
+}
+
+model LossRecord {
+  id               BigInt   @id @default(autoincrement())
+  lossNo           String   @unique @db.VarChar(64)
+  dedupeKey        String   @unique @db.VarChar(160)
+  storeId          BigInt
+  materialId       BigInt
+  orderId          BigInt?
+  orderItemId      BigInt?
+  stockMovementId  BigInt?  @unique
+  quantity         Decimal  @db.Decimal(18, 3)
+  unitCostSnapshot Decimal  @db.Decimal(18, 6)
+  lossCostSnapshot Decimal  @db.Decimal(18, 6)
+  reason           String   @db.VarChar(500)
+  operatorStaffId  BigInt?
+  occurredAt       DateTime @default(now())
+  createdAt        DateTime @default(now())
+
+  store         Store          @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  material      Material       @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  order         Order?         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  orderItem     OrderItem?     @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  stockMovement StockMovement? @relation(fields: [stockMovementId], references: [id], onDelete: Restrict)
+  operatorStaff Staff?         @relation("LossOperator", fields: [operatorStaffId], references: [id], onDelete: Restrict)
+
+  @@index([storeId, occurredAt])
+  @@index([materialId, occurredAt])
+  @@index([orderId])
+  @@map("loss_records")
+}
+
+model DiningTable {
+  id        BigInt    @id @default(autoincrement())
+  storeId   BigInt
+  name      String    @db.VarChar(40)
+  code      String    @db.VarChar(40)
+  capacity  Int
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  store    Store           @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  sessions DiningSession[]
+
+  @@index([storeId, deletedAt])
+  @@map("dining_tables")
+}
+
+model DiningSession {
+  id              BigInt              @id @default(autoincrement())
+  storeId         BigInt
+  tableId         BigInt
+  status          DiningSessionStatus @default(OPEN)
+  discountFen     BigInt              @default(0)
+  version         Int                 @default(1)
+  openedAt        DateTime            @default(now())
+  closedAt        DateTime?
+  closedByStaffId BigInt?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  store    Store           @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  table    DiningTable     @relation(fields: [tableId], references: [id], onDelete: Restrict)
+  closedBy Staff?          @relation("SessionCloser", fields: [closedByStaffId], references: [id], onDelete: Restrict)
+  orders   Order[]
+  payments PaymentRecord[]
+
+  @@index([storeId, status, openedAt])
+  @@index([tableId, status, openedAt])
+  @@map("dining_sessions")
+}
+
+model Order {
+  id             BigInt       @id @default(autoincrement())
+  storeId        BigInt
+  customerUserId BigInt
+  orderNo        String       @unique @db.VarChar(40)
+  idempotencyKey String       @unique @db.VarChar(160)
+  channel        OrderChannel
+  sessionId      BigInt?
+  status         OrderStatus  @default(PENDING_ACCEPTANCE)
+  subtotalFen    BigInt
+  discountFen    BigInt       @default(0)
+  totalAmountFen BigInt
+  version        Int          @default(1)
+  createdAt      DateTime     @default(now())
+  acceptedAt     DateTime?
+  preparingAt    DateTime?
+  completedAt    DateTime?
+  cancelledAt    DateTime?
+  cancelReason   String?      @db.VarChar(500)
+  updatedAt      DateTime     @updatedAt
+
+  store          Store           @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  customer       User            @relation(fields: [customerUserId], references: [id], onDelete: Restrict)
+  session        DiningSession?  @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  items          OrderItem[]
+  stockMovements StockMovement[]
+  lossRecords    LossRecord[]
+  payments       PaymentRecord[]
+
+  @@index([storeId, status, createdAt])
+  @@index([sessionId, status])
+  @@index([customerUserId, createdAt])
+  @@index([completedAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id                  BigInt   @id @default(autoincrement())
+  orderId             BigInt
+  productId           BigInt
+  variantId           BigInt
+  productNameSnapshot String   @db.VarChar(120)
+  variantNameSnapshot String   @db.VarChar(80)
+  unitPriceFen        BigInt
+  quantity            Int
+  lineSubtotalFen     BigInt
+  remark              String?  @db.VarChar(500)
+  createdAt           DateTime @default(now())
+
+  order          Order               @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  product        Product             @relation(fields: [productId], references: [id], onDelete: Restrict)
+  variant        ProductVariant      @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  options        OrderItemOption[]
+  materials      OrderItemMaterial[]
+  stockMovements StockMovement[]
+  lossRecords    LossRecord[]
+
+  @@index([orderId])
+  @@index([productId, createdAt])
+  @@index([variantId, createdAt])
+  @@map("order_items")
+}
+
+model OrderItemOption {
+  id                    BigInt @id @default(autoincrement())
+  orderItemId           BigInt
+  optionValueId         BigInt
+  groupCodeSnapshot     String @db.VarChar(40)
+  groupNameSnapshot     String @db.VarChar(80)
+  valueCodeSnapshot     String @db.VarChar(40)
+  valueNameSnapshot     String @db.VarChar(80)
+  priceDeltaFenSnapshot BigInt @default(0)
+
+  orderItem   OrderItem          @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  optionValue VariantOptionValue @relation(fields: [optionValueId], references: [id], onDelete: Restrict)
+
+  @@unique([orderItemId, groupCodeSnapshot, valueCodeSnapshot])
+  @@index([optionValueId])
+  @@map("order_item_options")
+}
+
+model OrderItemMaterial {
+  id                      BigInt                  @id @default(autoincrement())
+  orderItemId             BigInt
+  materialId              BigInt
+  materialNameSnapshot    String                  @db.VarChar(120)
+  unitSnapshot            String                  @db.VarChar(20)
+  quantityPerItem         Decimal                 @db.Decimal(18, 3)
+  totalQuantity           Decimal                 @db.Decimal(18, 3)
+  actualUnitCostSnapshot  Decimal?                @db.Decimal(18, 6)
+  actualTotalCostSnapshot Decimal?                @db.Decimal(18, 6)
+  source                  OrderItemMaterialSource
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  material  Material  @relation(fields: [materialId], references: [id], onDelete: Restrict)
+
+  @@unique([orderItemId, materialId, source])
+  @@index([materialId])
+  @@map("order_item_materials")
+}
+
+model PaymentRecord {
+  id              BigInt        @id @default(autoincrement())
+  paymentNo       String        @unique @db.VarChar(64)
+  idempotencyKey  String        @unique @db.VarChar(160)
+  storeId         BigInt
+  sessionId       BigInt?
+  orderId         BigInt?
+  paymentMethod   PaymentMethod
+  amountFen       BigInt
+  receivedAt      DateTime      @default(now())
+  operatorStaffId BigInt?
+  status          PaymentStatus @default(ACTIVE)
+  remark          String?       @db.VarChar(500)
+  voidedAt        DateTime?
+  voidedByStaffId BigInt?
+  voidReason      String?       @db.VarChar(500)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  store         Store          @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  session       DiningSession? @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  order         Order?         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  operatorStaff Staff?         @relation("PaymentOperator", fields: [operatorStaffId], references: [id], onDelete: Restrict)
+  voidedByStaff Staff?         @relation("PaymentVoidOperator", fields: [voidedByStaffId], references: [id], onDelete: Restrict)
+  refunds       RefundRecord[]
+
+  @@index([storeId, status, receivedAt])
+  @@index([sessionId, status])
+  @@index([orderId, status])
+  @@map("payment_records")
+}
+
+model RefundRecord {
+  id              BigInt       @id @default(autoincrement())
+  refundNo        String       @unique @db.VarChar(64)
+  idempotencyKey  String       @unique @db.VarChar(160)
+  paymentRecordId BigInt
+  amountFen       BigInt
+  reason          String       @db.VarChar(500)
+  status          RefundStatus @default(ACTIVE)
+  refundedAt      DateTime     @default(now())
+  operatorStaffId BigInt?
+  voidedAt        DateTime?
+  voidedByStaffId BigInt?
+  voidReason      String?      @db.VarChar(500)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  paymentRecord PaymentRecord @relation(fields: [paymentRecordId], references: [id], onDelete: Restrict)
+  operatorStaff Staff?        @relation("RefundOperator", fields: [operatorStaffId], references: [id], onDelete: Restrict)
+  voidedByStaff Staff?        @relation("RefundVoidOperator", fields: [voidedByStaffId], references: [id], onDelete: Restrict)
+
+  @@index([paymentRecordId, status, refundedAt])
+  @@map("refund_records")
+}

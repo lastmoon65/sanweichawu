@@ -58,7 +58,7 @@ P1-05 到 P1-07 是相互依赖的核心验收链，不能用单纯 mock 通过�
 - `docker-compose.yml` 的 MySQL 服务。
 - 固定 MySQL 8.4 LTS 镜像 digest。
 - 开发库和测试库初始化。
-- `backend/prisma/schema.prisma`。
+- `backend/prisma/schema.prisma`（P1-02-A 已完成）。
 - 首版初始迁移。
 - 最低限度的补充约束迁移，不包含优惠分摊相关对象。
 - 数据库启动/就绪/清理脚本。
@@ -72,7 +72,7 @@ P1-05 到 P1-07 是相互依赖的核心验收链，不能用单纯 mock 通过�
 5. 实际版本、`sql_mode`、隔离级别记录到验证报告。
 6. 失败时不得写成通过。
 
-状态：设计完成，未执行。必须等待真实 MySQL 8 环境。
+状态：P1-02-A Schema 已完成并通过 format/validate；Migration 尚未生成，真实 MySQL 验证未执行。
 
 ### P1-03 NestJS 基础设施
 
