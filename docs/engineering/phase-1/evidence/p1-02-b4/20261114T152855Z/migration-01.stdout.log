@@ -1,0 +1,21 @@
+Prisma schema loaded from backend\prisma\schema.prisma
+Datasource "db": MySQL database "sanweichawu_b4_main_20261114t152855z" at "127.0.0.1:33316"
+
+2 migrations found in prisma/migrations
+
+Applying migration `20261114120000_initial_schema`
+Applying migration `20261114120100_domain_constraints`
+Error: P3018
+
+A migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve
+
+Migration name: 20261114120100_domain_constraints
+
+Database error code: 3823
+
+Database error:
+Column 'closed_by_staff_id' cannot be used in a check constraint 'chk_dining_sessions_closed_fields': needed in a foreign key constraint 'dining_sessions_closed_by_staff_id_fkey' referential action.
+
+Please check the query number 11 from the migration file.
+
+

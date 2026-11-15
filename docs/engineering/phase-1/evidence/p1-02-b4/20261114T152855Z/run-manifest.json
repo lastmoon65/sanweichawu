@@ -1,0 +1,17 @@
+{
+  "runId": "20261114T152855Z",
+  "gitCommit": "a5641f29e8338a8b339f450ea3e195836c5c1cf9",
+  "node": "v22.22.3",
+  "prisma": "6.19.0",
+  "dockerClientServer": "29.9.3",
+  "mysqlVersion": "8.4.13",
+  "mysqlImage": "mysql@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902",
+  "container": "sanweichawu-b4-mysql",
+  "volume": "sanweichawu-b4-mysql-data",
+  "host": "127.0.0.1",
+  "port": 33316,
+  "mainDatabase": "sanweichawu_b4_main_20261114t152855z",
+  "failureDatabase": "sanweichawu_b4_failure_20261114t152855z",
+  "recoveryDatabase": "sanweichawu_b4_recovery_20261114t152855z",
+  "startedAtUtc": "2026-11-14T15:28:56.0421041Z"
+}

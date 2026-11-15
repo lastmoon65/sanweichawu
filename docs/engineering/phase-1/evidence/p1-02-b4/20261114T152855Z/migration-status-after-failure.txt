@@ -1,0 +1,19 @@
+Prisma schema loaded from backend\prisma\schema.prisma
+Datasource "db": MySQL database "sanweichawu_b4_main_20261114t152855z" at "127.0.0.1:33316"
+
+2 migrations found in prisma/migrations
+Following migration have failed:
+20261114120100_domain_constraints
+
+During development if the failed migration(s) have not been deployed to a production database you can then fix the migration(s) and run prisma migrate dev.
+
+The failed migration(s) can be marked as rolled back or applied:
+      
+- If you rolled back the migration(s) manually:
+prisma migrate resolve --rolled-back "20261114120100_domain_constraints"
+
+- If you fixed the database manually (hotfix):
+prisma migrate resolve --applied "20261114120100_domain_constraints"
+
+Read more about how to resolve migration issues in a production database:
+https://pris.ly/d/migrate-resolve

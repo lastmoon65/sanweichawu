@@ -1,0 +1,62 @@
+{
+  "expectedBusinessIndexes": 24,
+  "matchedBusinessIndexes": 24,
+  "missing": [],
+  "extraNonUniqueIndexes": 13,
+  "allExtraIndexesSupportForeignKeys": true,
+  "extraIndexes": [
+    {
+      "entry": "dining_sessions|dining_sessions_closed_by_staff_id_fkey|closed_by_staff_id",
+      "fkSupport": true
+    },
+    {
+      "entry": "loss_records|loss_records_operator_staff_id_fkey|operator_staff_id",
+      "fkSupport": true
+    },
+    {
+      "entry": "loss_records|loss_records_order_id_fkey|order_id",
+      "fkSupport": true
+    },
+    {
+      "entry": "loss_records|loss_records_order_item_id_fkey|order_item_id",
+      "fkSupport": true
+    },
+    {
+      "entry": "payment_records|payment_records_operator_staff_id_fkey|operator_staff_id",
+      "fkSupport": true
+    },
+    {
+      "entry": "payment_records|payment_records_voided_by_staff_id_fkey|voided_by_staff_id",
+      "fkSupport": true
+    },
+    {
+      "entry": "recipe_modifiers|recipe_modifiers_material_id_fkey|material_id",
+      "fkSupport": true
+    },
+    {
+      "entry": "refund_records|refund_records_operator_staff_id_fkey|operator_staff_id",
+      "fkSupport": true
+    },
+    {
+      "entry": "refund_records|refund_records_voided_by_staff_id_fkey|voided_by_staff_id",
+      "fkSupport": true
+    },
+    {
+      "entry": "staff|staff_store_id_fkey|store_id",
+      "fkSupport": true
+    },
+    {
+      "entry": "stock_movements|stock_movements_operator_staff_id_fkey|operator_staff_id",
+      "fkSupport": true
+    },
+    {
+      "entry": "stock_movements|stock_movements_order_item_id_fkey|order_item_id",
+      "fkSupport": true
+    },
+    {
+      "entry": "variant_recipes|variant_recipes_material_id_fkey|material_id",
+      "fkSupport": true
+    }
+  ],
+  "actualNonUniqueDistinct": 37
+}

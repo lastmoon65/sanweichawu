@@ -1,0 +1,8 @@
+{
+  "checkCount": 0,
+  "businessTables": 21,
+  "foreignKeys": 46,
+  "cascadeUpdates": 46,
+  "restrictUpdates": 0,
+  "nonRestrictDeletes": 0
+}

@@ -1,0 +1,23 @@
+STARTED_UTC=2026-11-15T04:20:48.6137289Z
+EXIT=1
+DURATION_MS=2554
+OUTPUT:
+Prisma schema loaded from backend\prisma\schema.prisma
+Datasource "db": MySQL database "sanweichawu_b4_main_20261114t152855z" at "127.0.0.1:33316"
+
+2 migrations found in prisma/migrations
+
+Applying migration `20261114120100_domain_constraints`
+Error: P3018
+
+A migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve
+
+Migration name: 20261114120100_domain_constraints
+
+Database error code: 1826
+
+Database error:
+Duplicate foreign key constraint name 'dining_sessions_closed_by_staff_id_fkey'
+
+Please check the query number 1 from the migration file.
+

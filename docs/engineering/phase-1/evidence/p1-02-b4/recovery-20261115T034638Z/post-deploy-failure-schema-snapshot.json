@@ -1,0 +1,3196 @@
+{
+  "capturedAtUtc": "2026-11-15T04:22:41.1075203Z",
+  "database": "sanweichawu_b4_main_20261114t152855z",
+  "mysqlVersion": "8.4.13",
+  "businessTableCount": 21,
+  "columnCount": 202,
+  "indexEntryCount": 120,
+  "foreignKeyCount": 46,
+  "checkCount": 0,
+  "tables": [
+    {
+      "table": "categories",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "dining_sessions",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "dining_tables",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "loss_records",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "materials",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "order_item_materials",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "order_item_options",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "order_items",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "orders",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "payment_records",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "product_variants",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "products",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "recipe_modifiers",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "refund_records",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "staff",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "stock_movements",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "stores",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "users",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "variant_option_groups",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "variant_option_values",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "table": "variant_recipes",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_unicode_ci"
+    }
+  ],
+  "columns": [
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "categories",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "categories",
+      "column": "store_id",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(80)",
+      "extra": "",
+      "table": "categories",
+      "column": "name",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "int",
+      "extra": "",
+      "table": "categories",
+      "column": "sort_order",
+      "default": "0",
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "enum('ACTIVE','DISABLED')",
+      "extra": "",
+      "table": "categories",
+      "column": "status",
+      "default": null,
+      "ordinal": 5,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "DEFAULT_GENERATED",
+      "table": "categories",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP(3)",
+      "ordinal": 6,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "categories",
+      "column": "updated_at",
+      "default": null,
+      "ordinal": 7,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "dining_sessions",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "dining_sessions",
+      "column": "store_id",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "dining_sessions",
+      "column": "table_id",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "enum('OPEN','CLOSED')",
+      "extra": "",
+      "table": "dining_sessions",
+      "column": "status",
+      "default": null,
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "int",
+      "extra": "",
+      "table": "dining_sessions",
+      "column": "version",
+      "default": "1",
+      "ordinal": 5,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "dining_sessions",
+      "column": "opened_at",
+      "default": null,
+      "ordinal": 6,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "dining_sessions",
+      "column": "closed_at",
+      "default": null,
+      "ordinal": 7,
+      "nullable": "YES"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "dining_sessions",
+      "column": "closed_by_staff_id",
+      "default": null,
+      "ordinal": 8,
+      "nullable": "YES"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "DEFAULT_GENERATED",
+      "table": "dining_sessions",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP(3)",
+      "ordinal": 9,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "dining_sessions",
+      "column": "updated_at",
+      "default": null,
+      "ordinal": 10,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "dining_tables",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "dining_tables",
+      "column": "store_id",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(40)",
+      "extra": "",
+      "table": "dining_tables",
+      "column": "name",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(40)",
+      "extra": "",
+      "table": "dining_tables",
+      "column": "code",
+      "default": null,
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "DEFAULT_GENERATED",
+      "table": "dining_tables",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP(3)",
+      "ordinal": 5,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "dining_tables",
+      "column": "updated_at",
+      "default": null,
+      "ordinal": 6,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "loss_records",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(160)",
+      "extra": "",
+      "table": "loss_records",
+      "column": "dedupe_key",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "loss_records",
+      "column": "store_id",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "loss_records",
+      "column": "material_id",
+      "default": null,
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "loss_records",
+      "column": "order_id",
+      "default": null,
+      "ordinal": 5,
+      "nullable": "YES"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "loss_records",
+      "column": "order_item_id",
+      "default": null,
+      "ordinal": 6,
+      "nullable": "YES"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "loss_records",
+      "column": "stock_movement_id",
+      "default": null,
+      "ordinal": 7,
+      "nullable": "YES"
+    },
+    {
+      "type": "decimal(18,3)",
+      "extra": "",
+      "table": "loss_records",
+      "column": "quantity",
+      "default": null,
+      "ordinal": 8,
+      "nullable": "NO"
+    },
+    {
+      "type": "decimal(18,6)",
+      "extra": "",
+      "table": "loss_records",
+      "column": "unit_cost_snapshot",
+      "default": null,
+      "ordinal": 9,
+      "nullable": "NO"
+    },
+    {
+      "type": "decimal(18,6)",
+      "extra": "",
+      "table": "loss_records",
+      "column": "loss_cost_snapshot",
+      "default": null,
+      "ordinal": 10,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(500)",
+      "extra": "",
+      "table": "loss_records",
+      "column": "reason",
+      "default": null,
+      "ordinal": 11,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "loss_records",
+      "column": "operator_staff_id",
+      "default": null,
+      "ordinal": 12,
+      "nullable": "YES"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "loss_records",
+      "column": "occurred_at",
+      "default": null,
+      "ordinal": 13,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "DEFAULT_GENERATED",
+      "table": "loss_records",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP(3)",
+      "ordinal": 14,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "materials",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "materials",
+      "column": "store_id",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(120)",
+      "extra": "",
+      "table": "materials",
+      "column": "name",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(20)",
+      "extra": "",
+      "table": "materials",
+      "column": "unit",
+      "default": null,
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "decimal(18,3)",
+      "extra": "",
+      "table": "materials",
+      "column": "on_hand",
+      "default": "0.000",
+      "ordinal": 5,
+      "nullable": "NO"
+    },
+    {
+      "type": "decimal(18,3)",
+      "extra": "",
+      "table": "materials",
+      "column": "reserved",
+      "default": "0.000",
+      "ordinal": 6,
+      "nullable": "NO"
+    },
+    {
+      "type": "decimal(18,6)",
+      "extra": "",
+      "table": "materials",
+      "column": "average_cost_per_unit",
+      "default": "0.000000",
+      "ordinal": 7,
+      "nullable": "NO"
+    },
+    {
+      "type": "enum('ACTIVE','DISABLED')",
+      "extra": "",
+      "table": "materials",
+      "column": "status",
+      "default": null,
+      "ordinal": 8,
+      "nullable": "NO"
+    },
+    {
+      "type": "int",
+      "extra": "",
+      "table": "materials",
+      "column": "version",
+      "default": "1",
+      "ordinal": 9,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "DEFAULT_GENERATED",
+      "table": "materials",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP(3)",
+      "ordinal": 10,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "materials",
+      "column": "updated_at",
+      "default": null,
+      "ordinal": 11,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "order_item_materials",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "order_item_materials",
+      "column": "order_item_id",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "order_item_materials",
+      "column": "material_id",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(120)",
+      "extra": "",
+      "table": "order_item_materials",
+      "column": "material_name_snapshot",
+      "default": null,
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(20)",
+      "extra": "",
+      "table": "order_item_materials",
+      "column": "unit_snapshot",
+      "default": null,
+      "ordinal": 5,
+      "nullable": "NO"
+    },
+    {
+      "type": "decimal(18,3)",
+      "extra": "",
+      "table": "order_item_materials",
+      "column": "quantity_per_item",
+      "default": null,
+      "ordinal": 6,
+      "nullable": "NO"
+    },
+    {
+      "type": "decimal(18,3)",
+      "extra": "",
+      "table": "order_item_materials",
+      "column": "total_quantity",
+      "default": null,
+      "ordinal": 7,
+      "nullable": "NO"
+    },
+    {
+      "type": "decimal(18,6)",
+      "extra": "",
+      "table": "order_item_materials",
+      "column": "actual_unit_cost_snapshot",
+      "default": null,
+      "ordinal": 8,
+      "nullable": "YES"
+    },
+    {
+      "type": "decimal(18,6)",
+      "extra": "",
+      "table": "order_item_materials",
+      "column": "actual_total_cost_snapshot",
+      "default": null,
+      "ordinal": 9,
+      "nullable": "YES"
+    },
+    {
+      "type": "enum('BASE','TAKEAWAY_EXTRA','MODIFIER')",
+      "extra": "",
+      "table": "order_item_materials",
+      "column": "source",
+      "default": null,
+      "ordinal": 10,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "order_item_options",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "order_item_options",
+      "column": "order_item_id",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "order_item_options",
+      "column": "option_value_id",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(80)",
+      "extra": "",
+      "table": "order_item_options",
+      "column": "group_name_snapshot",
+      "default": null,
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(80)",
+      "extra": "",
+      "table": "order_item_options",
+      "column": "value_name_snapshot",
+      "default": null,
+      "ordinal": 5,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "order_item_options",
+      "column": "price_delta_fen_snapshot",
+      "default": null,
+      "ordinal": 6,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "order_items",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "order_items",
+      "column": "order_id",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "order_items",
+      "column": "product_id",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "order_items",
+      "column": "variant_id",
+      "default": null,
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(120)",
+      "extra": "",
+      "table": "order_items",
+      "column": "product_name_snapshot",
+      "default": null,
+      "ordinal": 5,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(80)",
+      "extra": "",
+      "table": "order_items",
+      "column": "variant_name_snapshot",
+      "default": null,
+      "ordinal": 6,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "order_items",
+      "column": "unit_price_fen",
+      "default": null,
+      "ordinal": 7,
+      "nullable": "NO"
+    },
+    {
+      "type": "int",
+      "extra": "",
+      "table": "order_items",
+      "column": "quantity",
+      "default": null,
+      "ordinal": 8,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "order_items",
+      "column": "line_subtotal_fen",
+      "default": null,
+      "ordinal": 9,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(500)",
+      "extra": "",
+      "table": "order_items",
+      "column": "remark",
+      "default": null,
+      "ordinal": 10,
+      "nullable": "YES"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "DEFAULT_GENERATED",
+      "table": "order_items",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP(3)",
+      "ordinal": 11,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "orders",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "orders",
+      "column": "store_id",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "orders",
+      "column": "customer_user_id",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(40)",
+      "extra": "",
+      "table": "orders",
+      "column": "order_no",
+      "default": null,
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(160)",
+      "extra": "",
+      "table": "orders",
+      "column": "idempotency_key",
+      "default": null,
+      "ordinal": 5,
+      "nullable": "NO"
+    },
+    {
+      "type": "enum('DINE','TAKEAWAY')",
+      "extra": "",
+      "table": "orders",
+      "column": "channel",
+      "default": null,
+      "ordinal": 6,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "orders",
+      "column": "session_id",
+      "default": null,
+      "ordinal": 7,
+      "nullable": "YES"
+    },
+    {
+      "type": "enum('PENDING_ACCEPTANCE','ACCEPTED','PREPARING','COMPLETED','CANCELLED')",
+      "extra": "",
+      "table": "orders",
+      "column": "status",
+      "default": null,
+      "ordinal": 8,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "orders",
+      "column": "subtotal_fen",
+      "default": null,
+      "ordinal": 9,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "orders",
+      "column": "total_amount_fen",
+      "default": null,
+      "ordinal": 10,
+      "nullable": "NO"
+    },
+    {
+      "type": "int",
+      "extra": "",
+      "table": "orders",
+      "column": "version",
+      "default": "1",
+      "ordinal": 11,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "DEFAULT_GENERATED",
+      "table": "orders",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP(3)",
+      "ordinal": 12,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "orders",
+      "column": "accepted_at",
+      "default": null,
+      "ordinal": 13,
+      "nullable": "YES"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "orders",
+      "column": "preparing_at",
+      "default": null,
+      "ordinal": 14,
+      "nullable": "YES"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "orders",
+      "column": "completed_at",
+      "default": null,
+      "ordinal": 15,
+      "nullable": "YES"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "orders",
+      "column": "cancelled_at",
+      "default": null,
+      "ordinal": 16,
+      "nullable": "YES"
+    },
+    {
+      "type": "varchar(500)",
+      "extra": "",
+      "table": "orders",
+      "column": "cancel_reason",
+      "default": null,
+      "ordinal": 17,
+      "nullable": "YES"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "orders",
+      "column": "updated_at",
+      "default": null,
+      "ordinal": 18,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "payment_records",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(64)",
+      "extra": "",
+      "table": "payment_records",
+      "column": "payment_no",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(160)",
+      "extra": "",
+      "table": "payment_records",
+      "column": "idempotency_key",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "payment_records",
+      "column": "store_id",
+      "default": null,
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "payment_records",
+      "column": "session_id",
+      "default": null,
+      "ordinal": 5,
+      "nullable": "YES"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "payment_records",
+      "column": "order_id",
+      "default": null,
+      "ordinal": 6,
+      "nullable": "YES"
+    },
+    {
+      "type": "enum('CASH','WECHAT','ALIPAY','POS','OTHER')",
+      "extra": "",
+      "table": "payment_records",
+      "column": "payment_method",
+      "default": null,
+      "ordinal": 7,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "payment_records",
+      "column": "amount_fen",
+      "default": null,
+      "ordinal": 8,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "payment_records",
+      "column": "received_at",
+      "default": null,
+      "ordinal": 9,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "payment_records",
+      "column": "operator_staff_id",
+      "default": null,
+      "ordinal": 10,
+      "nullable": "YES"
+    },
+    {
+      "type": "enum('ACTIVE','VOIDED')",
+      "extra": "",
+      "table": "payment_records",
+      "column": "status",
+      "default": null,
+      "ordinal": 11,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(500)",
+      "extra": "",
+      "table": "payment_records",
+      "column": "remark",
+      "default": null,
+      "ordinal": 12,
+      "nullable": "YES"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "payment_records",
+      "column": "voided_at",
+      "default": null,
+      "ordinal": 13,
+      "nullable": "YES"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "payment_records",
+      "column": "voided_by_staff_id",
+      "default": null,
+      "ordinal": 14,
+      "nullable": "YES"
+    },
+    {
+      "type": "varchar(500)",
+      "extra": "",
+      "table": "payment_records",
+      "column": "void_reason",
+      "default": null,
+      "ordinal": 15,
+      "nullable": "YES"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "DEFAULT_GENERATED",
+      "table": "payment_records",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP(3)",
+      "ordinal": 16,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "payment_records",
+      "column": "updated_at",
+      "default": null,
+      "ordinal": 17,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "product_variants",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "product_variants",
+      "column": "product_id",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(80)",
+      "extra": "",
+      "table": "product_variants",
+      "column": "name",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "product_variants",
+      "column": "price_fen",
+      "default": null,
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "enum('MANAGED','UNMANAGED')",
+      "extra": "",
+      "table": "product_variants",
+      "column": "inventory_mode",
+      "default": null,
+      "ordinal": 5,
+      "nullable": "NO"
+    },
+    {
+      "type": "enum('ACTIVE','DISABLED')",
+      "extra": "",
+      "table": "product_variants",
+      "column": "status",
+      "default": null,
+      "ordinal": 6,
+      "nullable": "NO"
+    },
+    {
+      "type": "int",
+      "extra": "",
+      "table": "product_variants",
+      "column": "sort_order",
+      "default": "0",
+      "ordinal": 7,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "DEFAULT_GENERATED",
+      "table": "product_variants",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP(3)",
+      "ordinal": 8,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "product_variants",
+      "column": "updated_at",
+      "default": null,
+      "ordinal": 9,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "products",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "products",
+      "column": "store_id",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "products",
+      "column": "category_id",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(120)",
+      "extra": "",
+      "table": "products",
+      "column": "name",
+      "default": null,
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "text",
+      "extra": "",
+      "table": "products",
+      "column": "description",
+      "default": null,
+      "ordinal": 5,
+      "nullable": "YES"
+    },
+    {
+      "type": "varchar(512)",
+      "extra": "",
+      "table": "products",
+      "column": "image_url",
+      "default": null,
+      "ordinal": 6,
+      "nullable": "YES"
+    },
+    {
+      "type": "enum('ACTIVE','DISABLED')",
+      "extra": "",
+      "table": "products",
+      "column": "status",
+      "default": null,
+      "ordinal": 7,
+      "nullable": "NO"
+    },
+    {
+      "type": "int",
+      "extra": "",
+      "table": "products",
+      "column": "sort_order",
+      "default": "0",
+      "ordinal": 8,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "DEFAULT_GENERATED",
+      "table": "products",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP(3)",
+      "ordinal": 9,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "products",
+      "column": "updated_at",
+      "default": null,
+      "ordinal": 10,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "recipe_modifiers",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "recipe_modifiers",
+      "column": "variant_id",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "recipe_modifiers",
+      "column": "option_value_id",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "recipe_modifiers",
+      "column": "material_id",
+      "default": null,
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "enum('BASE','TAKEAWAY_EXTRA')",
+      "extra": "",
+      "table": "recipe_modifiers",
+      "column": "target_role",
+      "default": null,
+      "ordinal": 5,
+      "nullable": "NO"
+    },
+    {
+      "type": "decimal(18,3)",
+      "extra": "",
+      "table": "recipe_modifiers",
+      "column": "quantity_delta",
+      "default": null,
+      "ordinal": 6,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "refund_records",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(64)",
+      "extra": "",
+      "table": "refund_records",
+      "column": "refund_no",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(160)",
+      "extra": "",
+      "table": "refund_records",
+      "column": "idempotency_key",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "refund_records",
+      "column": "payment_record_id",
+      "default": null,
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "refund_records",
+      "column": "amount_fen",
+      "default": null,
+      "ordinal": 5,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(500)",
+      "extra": "",
+      "table": "refund_records",
+      "column": "reason",
+      "default": null,
+      "ordinal": 6,
+      "nullable": "NO"
+    },
+    {
+      "type": "enum('ACTIVE','VOIDED')",
+      "extra": "",
+      "table": "refund_records",
+      "column": "status",
+      "default": null,
+      "ordinal": 7,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "refund_records",
+      "column": "refunded_at",
+      "default": null,
+      "ordinal": 8,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "refund_records",
+      "column": "operator_staff_id",
+      "default": null,
+      "ordinal": 9,
+      "nullable": "YES"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "refund_records",
+      "column": "voided_at",
+      "default": null,
+      "ordinal": 10,
+      "nullable": "YES"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "refund_records",
+      "column": "voided_by_staff_id",
+      "default": null,
+      "ordinal": 11,
+      "nullable": "YES"
+    },
+    {
+      "type": "varchar(500)",
+      "extra": "",
+      "table": "refund_records",
+      "column": "void_reason",
+      "default": null,
+      "ordinal": 12,
+      "nullable": "YES"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "DEFAULT_GENERATED",
+      "table": "refund_records",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP(3)",
+      "ordinal": 13,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "refund_records",
+      "column": "updated_at",
+      "default": null,
+      "ordinal": 14,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "staff",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "staff",
+      "column": "store_id",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(80)",
+      "extra": "",
+      "table": "staff",
+      "column": "name",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "enum('OWNER','MANAGER','STAFF')",
+      "extra": "",
+      "table": "staff",
+      "column": "role",
+      "default": null,
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "enum('ACTIVE','DISABLED')",
+      "extra": "",
+      "table": "staff",
+      "column": "status",
+      "default": null,
+      "ordinal": 5,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "DEFAULT_GENERATED",
+      "table": "staff",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP(3)",
+      "ordinal": 6,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "staff",
+      "column": "updated_at",
+      "default": null,
+      "ordinal": 7,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "stock_movements",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(160)",
+      "extra": "",
+      "table": "stock_movements",
+      "column": "dedupe_key",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "stock_movements",
+      "column": "store_id",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "stock_movements",
+      "column": "material_id",
+      "default": null,
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "enum('OPENING_BALANCE','STOCK_IN','RESERVE','RELEASE','CONSUME','ADJUST')",
+      "extra": "",
+      "table": "stock_movements",
+      "column": "movement_type",
+      "default": null,
+      "ordinal": 5,
+      "nullable": "NO"
+    },
+    {
+      "type": "decimal(18,3)",
+      "extra": "",
+      "table": "stock_movements",
+      "column": "quantity_delta",
+      "default": null,
+      "ordinal": 6,
+      "nullable": "NO"
+    },
+    {
+      "type": "decimal(18,3)",
+      "extra": "",
+      "table": "stock_movements",
+      "column": "reserved_delta",
+      "default": null,
+      "ordinal": 7,
+      "nullable": "NO"
+    },
+    {
+      "type": "decimal(18,3)",
+      "extra": "",
+      "table": "stock_movements",
+      "column": "on_hand_after",
+      "default": null,
+      "ordinal": 8,
+      "nullable": "NO"
+    },
+    {
+      "type": "decimal(18,3)",
+      "extra": "",
+      "table": "stock_movements",
+      "column": "reserved_after",
+      "default": null,
+      "ordinal": 9,
+      "nullable": "NO"
+    },
+    {
+      "type": "decimal(18,6)",
+      "extra": "",
+      "table": "stock_movements",
+      "column": "unit_cost_snapshot",
+      "default": null,
+      "ordinal": 10,
+      "nullable": "YES"
+    },
+    {
+      "type": "decimal(18,6)",
+      "extra": "",
+      "table": "stock_movements",
+      "column": "total_cost_snapshot",
+      "default": null,
+      "ordinal": 11,
+      "nullable": "YES"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "stock_movements",
+      "column": "order_id",
+      "default": null,
+      "ordinal": 12,
+      "nullable": "YES"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "stock_movements",
+      "column": "order_item_id",
+      "default": null,
+      "ordinal": 13,
+      "nullable": "YES"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "stock_movements",
+      "column": "operator_staff_id",
+      "default": null,
+      "ordinal": 14,
+      "nullable": "YES"
+    },
+    {
+      "type": "varchar(500)",
+      "extra": "",
+      "table": "stock_movements",
+      "column": "reason",
+      "default": null,
+      "ordinal": 15,
+      "nullable": "YES"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "DEFAULT_GENERATED",
+      "table": "stock_movements",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP(3)",
+      "ordinal": 16,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "stores",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(120)",
+      "extra": "",
+      "table": "stores",
+      "column": "name",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "enum('ACTIVE','SUSPENDED')",
+      "extra": "",
+      "table": "stores",
+      "column": "status",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(64)",
+      "extra": "",
+      "table": "stores",
+      "column": "timezone",
+      "default": "Asia/Shanghai",
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "int",
+      "extra": "",
+      "table": "stores",
+      "column": "business_day_cutoff_minute",
+      "default": "0",
+      "ordinal": 5,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "DEFAULT_GENERATED",
+      "table": "stores",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP(3)",
+      "ordinal": 6,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "stores",
+      "column": "updated_at",
+      "default": null,
+      "ordinal": 7,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "users",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(128)",
+      "extra": "",
+      "table": "users",
+      "column": "openid",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "enum('ACTIVE','DISABLED')",
+      "extra": "",
+      "table": "users",
+      "column": "status",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "DEFAULT_GENERATED",
+      "table": "users",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP(3)",
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "datetime(3)",
+      "extra": "",
+      "table": "users",
+      "column": "updated_at",
+      "default": null,
+      "ordinal": 5,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "variant_option_groups",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "variant_option_groups",
+      "column": "variant_id",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(80)",
+      "extra": "",
+      "table": "variant_option_groups",
+      "column": "name",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "enum('SINGLE','MULTI')",
+      "extra": "",
+      "table": "variant_option_groups",
+      "column": "selection_type",
+      "default": null,
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "tinyint(1)",
+      "extra": "",
+      "table": "variant_option_groups",
+      "column": "required",
+      "default": null,
+      "ordinal": 5,
+      "nullable": "NO"
+    },
+    {
+      "type": "int",
+      "extra": "",
+      "table": "variant_option_groups",
+      "column": "sort_order",
+      "default": "0",
+      "ordinal": 6,
+      "nullable": "NO"
+    },
+    {
+      "type": "enum('ACTIVE','DISABLED')",
+      "extra": "",
+      "table": "variant_option_groups",
+      "column": "status",
+      "default": null,
+      "ordinal": 7,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "variant_option_values",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "variant_option_values",
+      "column": "option_group_id",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "varchar(80)",
+      "extra": "",
+      "table": "variant_option_values",
+      "column": "name",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "variant_option_values",
+      "column": "price_delta_fen",
+      "default": "0",
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "int",
+      "extra": "",
+      "table": "variant_option_values",
+      "column": "sort_order",
+      "default": "0",
+      "ordinal": 5,
+      "nullable": "NO"
+    },
+    {
+      "type": "enum('ACTIVE','DISABLED')",
+      "extra": "",
+      "table": "variant_option_values",
+      "column": "status",
+      "default": null,
+      "ordinal": 6,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "auto_increment",
+      "table": "variant_recipes",
+      "column": "id",
+      "default": null,
+      "ordinal": 1,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "variant_recipes",
+      "column": "variant_id",
+      "default": null,
+      "ordinal": 2,
+      "nullable": "NO"
+    },
+    {
+      "type": "bigint",
+      "extra": "",
+      "table": "variant_recipes",
+      "column": "material_id",
+      "default": null,
+      "ordinal": 3,
+      "nullable": "NO"
+    },
+    {
+      "type": "enum('BASE','TAKEAWAY_EXTRA')",
+      "extra": "",
+      "table": "variant_recipes",
+      "column": "role",
+      "default": null,
+      "ordinal": 4,
+      "nullable": "NO"
+    },
+    {
+      "type": "decimal(18,3)",
+      "extra": "",
+      "table": "variant_recipes",
+      "column": "quantity",
+      "default": null,
+      "ordinal": 5,
+      "nullable": "NO"
+    }
+  ],
+  "indexes": [
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "users",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "users_openid_key",
+      "table": "users",
+      "column": "openid",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "staff",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "staff_store_id_fkey",
+      "table": "staff",
+      "column": "store_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "categories",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "categories_store_id_name_key",
+      "table": "categories",
+      "column": "store_id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 2,
+      "name": "categories_store_id_name_key",
+      "table": "categories",
+      "column": "name",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "products",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "products_store_id_name_key",
+      "table": "products",
+      "column": "store_id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 2,
+      "name": "products_store_id_name_key",
+      "table": "products",
+      "column": "name",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "products_category_id_status_sort_order_idx",
+      "table": "products",
+      "column": "category_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 2,
+      "name": "products_category_id_status_sort_order_idx",
+      "table": "products",
+      "column": "status",
+      "nonUnique": 1
+    },
+    {
+      "seq": 3,
+      "name": "products_category_id_status_sort_order_idx",
+      "table": "products",
+      "column": "sort_order",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "variant_option_groups",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "variant_option_groups_variant_id_name_key",
+      "table": "variant_option_groups",
+      "column": "variant_id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 2,
+      "name": "variant_option_groups_variant_id_name_key",
+      "table": "variant_option_groups",
+      "column": "name",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "variant_option_values",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "variant_option_values_option_group_id_name_key",
+      "table": "variant_option_values",
+      "column": "option_group_id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 2,
+      "name": "variant_option_values_option_group_id_name_key",
+      "table": "variant_option_values",
+      "column": "name",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "recipe_modifiers",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "recipe_modifiers_variant_id_option_value_id_material_id_targ_key",
+      "table": "recipe_modifiers",
+      "column": "variant_id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 2,
+      "name": "recipe_modifiers_variant_id_option_value_id_material_id_targ_key",
+      "table": "recipe_modifiers",
+      "column": "option_value_id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 3,
+      "name": "recipe_modifiers_variant_id_option_value_id_material_id_targ_key",
+      "table": "recipe_modifiers",
+      "column": "material_id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 4,
+      "name": "recipe_modifiers_variant_id_option_value_id_material_id_targ_key",
+      "table": "recipe_modifiers",
+      "column": "target_role",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "recipe_modifiers_option_value_id_idx",
+      "table": "recipe_modifiers",
+      "column": "option_value_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "recipe_modifiers_material_id_fkey",
+      "table": "recipe_modifiers",
+      "column": "material_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "dining_tables",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "dining_tables_store_id_code_key",
+      "table": "dining_tables",
+      "column": "store_id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 2,
+      "name": "dining_tables_store_id_code_key",
+      "table": "dining_tables",
+      "column": "code",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "orders",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "orders_order_no_key",
+      "table": "orders",
+      "column": "order_no",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "orders_idempotency_key_key",
+      "table": "orders",
+      "column": "idempotency_key",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "orders_store_id_status_created_at_idx",
+      "table": "orders",
+      "column": "store_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 2,
+      "name": "orders_store_id_status_created_at_idx",
+      "table": "orders",
+      "column": "status",
+      "nonUnique": 1
+    },
+    {
+      "seq": 3,
+      "name": "orders_store_id_status_created_at_idx",
+      "table": "orders",
+      "column": "created_at",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "orders_session_id_status_idx",
+      "table": "orders",
+      "column": "session_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 2,
+      "name": "orders_session_id_status_idx",
+      "table": "orders",
+      "column": "status",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "orders_customer_user_id_created_at_idx",
+      "table": "orders",
+      "column": "customer_user_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 2,
+      "name": "orders_customer_user_id_created_at_idx",
+      "table": "orders",
+      "column": "created_at",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "orders_completed_at_idx",
+      "table": "orders",
+      "column": "completed_at",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "order_items",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "order_items_order_id_idx",
+      "table": "order_items",
+      "column": "order_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "order_items_product_id_created_at_idx",
+      "table": "order_items",
+      "column": "product_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 2,
+      "name": "order_items_product_id_created_at_idx",
+      "table": "order_items",
+      "column": "created_at",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "order_items_variant_id_created_at_idx",
+      "table": "order_items",
+      "column": "variant_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 2,
+      "name": "order_items_variant_id_created_at_idx",
+      "table": "order_items",
+      "column": "created_at",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "order_item_options",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "order_item_options_order_item_id_option_value_id_key",
+      "table": "order_item_options",
+      "column": "order_item_id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 2,
+      "name": "order_item_options_order_item_id_option_value_id_key",
+      "table": "order_item_options",
+      "column": "option_value_id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "order_item_options_option_value_id_idx",
+      "table": "order_item_options",
+      "column": "option_value_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "order_item_materials",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "order_item_materials_order_item_id_material_id_source_key",
+      "table": "order_item_materials",
+      "column": "order_item_id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 2,
+      "name": "order_item_materials_order_item_id_material_id_source_key",
+      "table": "order_item_materials",
+      "column": "material_id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 3,
+      "name": "order_item_materials_order_item_id_material_id_source_key",
+      "table": "order_item_materials",
+      "column": "source",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "order_item_materials_material_id_idx",
+      "table": "order_item_materials",
+      "column": "material_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "payment_records",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "payment_records_payment_no_key",
+      "table": "payment_records",
+      "column": "payment_no",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "payment_records_idempotency_key_key",
+      "table": "payment_records",
+      "column": "idempotency_key",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "payment_records_store_id_status_received_at_idx",
+      "table": "payment_records",
+      "column": "store_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 2,
+      "name": "payment_records_store_id_status_received_at_idx",
+      "table": "payment_records",
+      "column": "status",
+      "nonUnique": 1
+    },
+    {
+      "seq": 3,
+      "name": "payment_records_store_id_status_received_at_idx",
+      "table": "payment_records",
+      "column": "received_at",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "payment_records_session_id_status_idx",
+      "table": "payment_records",
+      "column": "session_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 2,
+      "name": "payment_records_session_id_status_idx",
+      "table": "payment_records",
+      "column": "status",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "payment_records_order_id_status_idx",
+      "table": "payment_records",
+      "column": "order_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 2,
+      "name": "payment_records_order_id_status_idx",
+      "table": "payment_records",
+      "column": "status",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "payment_records_operator_staff_id_fkey",
+      "table": "payment_records",
+      "column": "operator_staff_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "payment_records_voided_by_staff_id_fkey",
+      "table": "payment_records",
+      "column": "voided_by_staff_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "refund_records",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "refund_records_refund_no_key",
+      "table": "refund_records",
+      "column": "refund_no",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "refund_records_idempotency_key_key",
+      "table": "refund_records",
+      "column": "idempotency_key",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "refund_records_payment_record_id_status_refunded_at_idx",
+      "table": "refund_records",
+      "column": "payment_record_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 2,
+      "name": "refund_records_payment_record_id_status_refunded_at_idx",
+      "table": "refund_records",
+      "column": "status",
+      "nonUnique": 1
+    },
+    {
+      "seq": 3,
+      "name": "refund_records_payment_record_id_status_refunded_at_idx",
+      "table": "refund_records",
+      "column": "refunded_at",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "refund_records_operator_staff_id_fkey",
+      "table": "refund_records",
+      "column": "operator_staff_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "refund_records_voided_by_staff_id_fkey",
+      "table": "refund_records",
+      "column": "voided_by_staff_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "stores",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "product_variants",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "product_variants_product_id_name_key",
+      "table": "product_variants",
+      "column": "product_id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 2,
+      "name": "product_variants_product_id_name_key",
+      "table": "product_variants",
+      "column": "name",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "product_variants_product_id_status_sort_order_idx",
+      "table": "product_variants",
+      "column": "product_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 2,
+      "name": "product_variants_product_id_status_sort_order_idx",
+      "table": "product_variants",
+      "column": "status",
+      "nonUnique": 1
+    },
+    {
+      "seq": 3,
+      "name": "product_variants_product_id_status_sort_order_idx",
+      "table": "product_variants",
+      "column": "sort_order",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "variant_recipes",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "variant_recipes_variant_id_material_id_role_key",
+      "table": "variant_recipes",
+      "column": "variant_id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 2,
+      "name": "variant_recipes_variant_id_material_id_role_key",
+      "table": "variant_recipes",
+      "column": "material_id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 3,
+      "name": "variant_recipes_variant_id_material_id_role_key",
+      "table": "variant_recipes",
+      "column": "role",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "variant_recipes_material_id_fkey",
+      "table": "variant_recipes",
+      "column": "material_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "materials",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "materials_store_id_name_key",
+      "table": "materials",
+      "column": "store_id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 2,
+      "name": "materials_store_id_name_key",
+      "table": "materials",
+      "column": "name",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "materials_store_id_status_idx",
+      "table": "materials",
+      "column": "store_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 2,
+      "name": "materials_store_id_status_idx",
+      "table": "materials",
+      "column": "status",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "stock_movements",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "stock_movements_dedupe_key_key",
+      "table": "stock_movements",
+      "column": "dedupe_key",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "stock_movements_material_id_created_at_idx",
+      "table": "stock_movements",
+      "column": "material_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 2,
+      "name": "stock_movements_material_id_created_at_idx",
+      "table": "stock_movements",
+      "column": "created_at",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "stock_movements_order_id_movement_type_idx",
+      "table": "stock_movements",
+      "column": "order_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 2,
+      "name": "stock_movements_order_id_movement_type_idx",
+      "table": "stock_movements",
+      "column": "movement_type",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "stock_movements_store_id_movement_type_created_at_idx",
+      "table": "stock_movements",
+      "column": "store_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 2,
+      "name": "stock_movements_store_id_movement_type_created_at_idx",
+      "table": "stock_movements",
+      "column": "movement_type",
+      "nonUnique": 1
+    },
+    {
+      "seq": 3,
+      "name": "stock_movements_store_id_movement_type_created_at_idx",
+      "table": "stock_movements",
+      "column": "created_at",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "stock_movements_order_item_id_fkey",
+      "table": "stock_movements",
+      "column": "order_item_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "stock_movements_operator_staff_id_fkey",
+      "table": "stock_movements",
+      "column": "operator_staff_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "loss_records",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "loss_records_dedupe_key_key",
+      "table": "loss_records",
+      "column": "dedupe_key",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "loss_records_stock_movement_id_key",
+      "table": "loss_records",
+      "column": "stock_movement_id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "loss_records_material_id_occurred_at_idx",
+      "table": "loss_records",
+      "column": "material_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 2,
+      "name": "loss_records_material_id_occurred_at_idx",
+      "table": "loss_records",
+      "column": "occurred_at",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "loss_records_store_id_occurred_at_idx",
+      "table": "loss_records",
+      "column": "store_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 2,
+      "name": "loss_records_store_id_occurred_at_idx",
+      "table": "loss_records",
+      "column": "occurred_at",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "loss_records_order_id_fkey",
+      "table": "loss_records",
+      "column": "order_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "loss_records_order_item_id_fkey",
+      "table": "loss_records",
+      "column": "order_item_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "loss_records_operator_staff_id_fkey",
+      "table": "loss_records",
+      "column": "operator_staff_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "PRIMARY",
+      "table": "dining_sessions",
+      "column": "id",
+      "nonUnique": 0
+    },
+    {
+      "seq": 1,
+      "name": "dining_sessions_table_id_status_idx",
+      "table": "dining_sessions",
+      "column": "table_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 2,
+      "name": "dining_sessions_table_id_status_idx",
+      "table": "dining_sessions",
+      "column": "status",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "dining_sessions_store_id_status_opened_at_idx",
+      "table": "dining_sessions",
+      "column": "store_id",
+      "nonUnique": 1
+    },
+    {
+      "seq": 2,
+      "name": "dining_sessions_store_id_status_opened_at_idx",
+      "table": "dining_sessions",
+      "column": "status",
+      "nonUnique": 1
+    },
+    {
+      "seq": 3,
+      "name": "dining_sessions_store_id_status_opened_at_idx",
+      "table": "dining_sessions",
+      "column": "opened_at",
+      "nonUnique": 1
+    },
+    {
+      "seq": 1,
+      "name": "dining_sessions_closed_by_staff_id_fkey",
+      "table": "dining_sessions",
+      "column": "closed_by_staff_id",
+      "nonUnique": 1
+    }
+  ],
+  "foreignKeys": [
+    {
+      "name": "categories_store_id_fkey",
+      "table": "categories",
+      "column": "store_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "stores",
+      "targetColumn": "id"
+    },
+    {
+      "name": "dining_sessions_closed_by_staff_id_fkey",
+      "table": "dining_sessions",
+      "column": "closed_by_staff_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "staff",
+      "targetColumn": "id"
+    },
+    {
+      "name": "dining_sessions_store_id_fkey",
+      "table": "dining_sessions",
+      "column": "store_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "stores",
+      "targetColumn": "id"
+    },
+    {
+      "name": "dining_sessions_table_id_fkey",
+      "table": "dining_sessions",
+      "column": "table_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "dining_tables",
+      "targetColumn": "id"
+    },
+    {
+      "name": "dining_tables_store_id_fkey",
+      "table": "dining_tables",
+      "column": "store_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "stores",
+      "targetColumn": "id"
+    },
+    {
+      "name": "loss_records_material_id_fkey",
+      "table": "loss_records",
+      "column": "material_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "materials",
+      "targetColumn": "id"
+    },
+    {
+      "name": "loss_records_operator_staff_id_fkey",
+      "table": "loss_records",
+      "column": "operator_staff_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "staff",
+      "targetColumn": "id"
+    },
+    {
+      "name": "loss_records_order_id_fkey",
+      "table": "loss_records",
+      "column": "order_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "orders",
+      "targetColumn": "id"
+    },
+    {
+      "name": "loss_records_order_item_id_fkey",
+      "table": "loss_records",
+      "column": "order_item_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "order_items",
+      "targetColumn": "id"
+    },
+    {
+      "name": "loss_records_stock_movement_id_fkey",
+      "table": "loss_records",
+      "column": "stock_movement_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "stock_movements",
+      "targetColumn": "id"
+    },
+    {
+      "name": "loss_records_store_id_fkey",
+      "table": "loss_records",
+      "column": "store_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "stores",
+      "targetColumn": "id"
+    },
+    {
+      "name": "materials_store_id_fkey",
+      "table": "materials",
+      "column": "store_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "stores",
+      "targetColumn": "id"
+    },
+    {
+      "name": "orders_customer_user_id_fkey",
+      "table": "orders",
+      "column": "customer_user_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "users",
+      "targetColumn": "id"
+    },
+    {
+      "name": "orders_session_id_fkey",
+      "table": "orders",
+      "column": "session_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "dining_sessions",
+      "targetColumn": "id"
+    },
+    {
+      "name": "orders_store_id_fkey",
+      "table": "orders",
+      "column": "store_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "stores",
+      "targetColumn": "id"
+    },
+    {
+      "name": "order_items_order_id_fkey",
+      "table": "order_items",
+      "column": "order_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "orders",
+      "targetColumn": "id"
+    },
+    {
+      "name": "order_items_product_id_fkey",
+      "table": "order_items",
+      "column": "product_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "products",
+      "targetColumn": "id"
+    },
+    {
+      "name": "order_items_variant_id_fkey",
+      "table": "order_items",
+      "column": "variant_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "product_variants",
+      "targetColumn": "id"
+    },
+    {
+      "name": "order_item_materials_material_id_fkey",
+      "table": "order_item_materials",
+      "column": "material_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "materials",
+      "targetColumn": "id"
+    },
+    {
+      "name": "order_item_materials_order_item_id_fkey",
+      "table": "order_item_materials",
+      "column": "order_item_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "order_items",
+      "targetColumn": "id"
+    },
+    {
+      "name": "order_item_options_option_value_id_fkey",
+      "table": "order_item_options",
+      "column": "option_value_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "variant_option_values",
+      "targetColumn": "id"
+    },
+    {
+      "name": "order_item_options_order_item_id_fkey",
+      "table": "order_item_options",
+      "column": "order_item_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "order_items",
+      "targetColumn": "id"
+    },
+    {
+      "name": "payment_records_operator_staff_id_fkey",
+      "table": "payment_records",
+      "column": "operator_staff_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "staff",
+      "targetColumn": "id"
+    },
+    {
+      "name": "payment_records_order_id_fkey",
+      "table": "payment_records",
+      "column": "order_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "orders",
+      "targetColumn": "id"
+    },
+    {
+      "name": "payment_records_session_id_fkey",
+      "table": "payment_records",
+      "column": "session_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "dining_sessions",
+      "targetColumn": "id"
+    },
+    {
+      "name": "payment_records_store_id_fkey",
+      "table": "payment_records",
+      "column": "store_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "stores",
+      "targetColumn": "id"
+    },
+    {
+      "name": "payment_records_voided_by_staff_id_fkey",
+      "table": "payment_records",
+      "column": "voided_by_staff_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "staff",
+      "targetColumn": "id"
+    },
+    {
+      "name": "products_category_id_fkey",
+      "table": "products",
+      "column": "category_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "categories",
+      "targetColumn": "id"
+    },
+    {
+      "name": "products_store_id_fkey",
+      "table": "products",
+      "column": "store_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "stores",
+      "targetColumn": "id"
+    },
+    {
+      "name": "product_variants_product_id_fkey",
+      "table": "product_variants",
+      "column": "product_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "products",
+      "targetColumn": "id"
+    },
+    {
+      "name": "recipe_modifiers_material_id_fkey",
+      "table": "recipe_modifiers",
+      "column": "material_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "materials",
+      "targetColumn": "id"
+    },
+    {
+      "name": "recipe_modifiers_option_value_id_fkey",
+      "table": "recipe_modifiers",
+      "column": "option_value_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "variant_option_values",
+      "targetColumn": "id"
+    },
+    {
+      "name": "recipe_modifiers_variant_id_fkey",
+      "table": "recipe_modifiers",
+      "column": "variant_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "product_variants",
+      "targetColumn": "id"
+    },
+    {
+      "name": "refund_records_operator_staff_id_fkey",
+      "table": "refund_records",
+      "column": "operator_staff_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "staff",
+      "targetColumn": "id"
+    },
+    {
+      "name": "refund_records_payment_record_id_fkey",
+      "table": "refund_records",
+      "column": "payment_record_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "payment_records",
+      "targetColumn": "id"
+    },
+    {
+      "name": "refund_records_voided_by_staff_id_fkey",
+      "table": "refund_records",
+      "column": "voided_by_staff_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "staff",
+      "targetColumn": "id"
+    },
+    {
+      "name": "staff_store_id_fkey",
+      "table": "staff",
+      "column": "store_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "stores",
+      "targetColumn": "id"
+    },
+    {
+      "name": "stock_movements_material_id_fkey",
+      "table": "stock_movements",
+      "column": "material_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "materials",
+      "targetColumn": "id"
+    },
+    {
+      "name": "stock_movements_operator_staff_id_fkey",
+      "table": "stock_movements",
+      "column": "operator_staff_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "staff",
+      "targetColumn": "id"
+    },
+    {
+      "name": "stock_movements_order_id_fkey",
+      "table": "stock_movements",
+      "column": "order_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "orders",
+      "targetColumn": "id"
+    },
+    {
+      "name": "stock_movements_order_item_id_fkey",
+      "table": "stock_movements",
+      "column": "order_item_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "order_items",
+      "targetColumn": "id"
+    },
+    {
+      "name": "stock_movements_store_id_fkey",
+      "table": "stock_movements",
+      "column": "store_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "stores",
+      "targetColumn": "id"
+    },
+    {
+      "name": "variant_option_groups_variant_id_fkey",
+      "table": "variant_option_groups",
+      "column": "variant_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "product_variants",
+      "targetColumn": "id"
+    },
+    {
+      "name": "variant_option_values_option_group_id_fkey",
+      "table": "variant_option_values",
+      "column": "option_group_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "variant_option_groups",
+      "targetColumn": "id"
+    },
+    {
+      "name": "variant_recipes_material_id_fkey",
+      "table": "variant_recipes",
+      "column": "material_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "materials",
+      "targetColumn": "id"
+    },
+    {
+      "name": "variant_recipes_variant_id_fkey",
+      "table": "variant_recipes",
+      "column": "variant_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "product_variants",
+      "targetColumn": "id"
+    }
+  ],
+  "checks": []
+}

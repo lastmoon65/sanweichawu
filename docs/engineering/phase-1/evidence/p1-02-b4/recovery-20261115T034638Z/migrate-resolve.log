@@ -1,0 +1,8 @@
+STARTED_UTC=2026-11-15T04:19:40.4899741Z
+EXIT=0
+DURATION_MS=4390
+OUTPUT:
+Prisma schema loaded from backend\prisma\schema.prisma
+Datasource "db": MySQL database "sanweichawu_b4_main_20261114t152855z" at "127.0.0.1:33316"
+
+Migration 20261114120100_domain_constraints marked as rolled back.

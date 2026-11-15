@@ -4,6 +4,57 @@
 -- Cross-table checks (for example LossRecord vs StockMovement material/quantity/cost)
 -- remain service transaction responsibilities and require integration tests.
 
+-- MySQL 8.4 compatibility: columns used by CHECK constraints cannot participate
+-- in a foreign-key ON UPDATE CASCADE referential action.
+-- DROP and ADD must be separate statements because reusing the same constraint
+-- name in one ALTER TABLE fails with MySQL error 1826.
+ALTER TABLE `dining_sessions`
+  DROP FOREIGN KEY `dining_sessions_closed_by_staff_id_fkey`;
+
+ALTER TABLE `dining_sessions`
+  ADD CONSTRAINT `dining_sessions_closed_by_staff_id_fkey`
+    FOREIGN KEY (`closed_by_staff_id`) REFERENCES `staff`(`id`)
+    ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+ALTER TABLE `orders`
+  DROP FOREIGN KEY `orders_session_id_fkey`;
+
+ALTER TABLE `orders`
+  ADD CONSTRAINT `orders_session_id_fkey`
+    FOREIGN KEY (`session_id`) REFERENCES `dining_sessions`(`id`)
+    ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+ALTER TABLE `payment_records`
+  DROP FOREIGN KEY `payment_records_session_id_fkey`;
+
+ALTER TABLE `payment_records`
+  ADD CONSTRAINT `payment_records_session_id_fkey`
+    FOREIGN KEY (`session_id`) REFERENCES `dining_sessions`(`id`)
+    ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+ALTER TABLE `payment_records`
+  DROP FOREIGN KEY `payment_records_order_id_fkey`;
+
+ALTER TABLE `payment_records`
+  ADD CONSTRAINT `payment_records_order_id_fkey`
+    FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`)
+    ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+ALTER TABLE `payment_records`
+  DROP FOREIGN KEY `payment_records_voided_by_staff_id_fkey`;
+
+ALTER TABLE `payment_records`
+  ADD CONSTRAINT `payment_records_voided_by_staff_id_fkey`
+    FOREIGN KEY (`voided_by_staff_id`) REFERENCES `staff`(`id`)
+    ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+ALTER TABLE `refund_records`
+  DROP FOREIGN KEY `refund_records_voided_by_staff_id_fkey`;
+
+ALTER TABLE `refund_records`
+  ADD CONSTRAINT `refund_records_voided_by_staff_id_fkey`
+    FOREIGN KEY (`voided_by_staff_id`) REFERENCES `staff`(`id`)
+    ON DELETE RESTRICT ON UPDATE RESTRICT;
 -- Store configuration
 ALTER TABLE `stores`
   ADD CONSTRAINT `chk_stores_business_day_cutoff_minute`

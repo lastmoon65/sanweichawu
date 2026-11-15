@@ -1,0 +1,20 @@
+[
+  {
+    "logs": null,
+    "checksum": "ad2274e7a964ea753661b8c037c486f4b4a1855c0dfe74ecb9613cf0190ce19b",
+    "startedAt": "2026-11-14 15:29:03.748000",
+    "finishedAt": "2026-11-14 15:29:12.212000",
+    "rolledBackAt": null,
+    "migrationName": "20261114120000_initial_schema",
+    "appliedStepsCount": 1
+  },
+  {
+    "logs": "A migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve\\n\\nMigration name: 20261114120100_domain_constraints\\n\\nDatabase error code: 3823\\n\\nDatabase error:\\nColumn 'closed_by_staff_id' cannot be used in a check constraint 'chk_dining_sessions_closed_fields': needed in a foreign key constraint 'dining_sessions_closed_by_staff_id_fkey' referential action.\\n\\nPlease check the query number 11 from the migration file.\\n\\n",
+    "checksum": "8c07acfd2f657d5cf1e58a1250aa315416a6d73d97cf1bc9b2729092332c4333",
+    "startedAt": "2026-11-14 15:29:12.221000",
+    "finishedAt": null,
+    "rolledBackAt": "2026-11-15 04:19:44.734000",
+    "migrationName": "20261114120100_domain_constraints",
+    "appliedStepsCount": 0
+  }
+]

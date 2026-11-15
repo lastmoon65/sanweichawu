@@ -1,0 +1,18 @@
+STARTED_UTC=2026-11-15T10:22:41.0156459Z
+EXIT=0
+DURATION_MS=7899
+OUTPUT:
+Prisma schema loaded from backend\prisma\schema.prisma
+Datasource "db": MySQL database "sanweichawu_b4_main_20261114t152855z" at "127.0.0.1:33316"
+
+2 migrations found in prisma/migrations
+
+Applying migration `20261114120100_domain_constraints`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20261114120100_domain_constraints/
+    └─ migration.sql
+      
+All migrations have been successfully applied.

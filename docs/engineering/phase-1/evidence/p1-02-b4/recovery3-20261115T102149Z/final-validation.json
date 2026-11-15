@@ -1,0 +1,23 @@
+{
+  "tables": 21,
+  "columns": 202,
+  "uniqueIndexes": 21,
+  "ordinaryIndexes": 37,
+  "foreignKeys": 46,
+  "deleteRestrict": 46,
+  "updateRestrict": 6,
+  "updateCascade": 40,
+  "checks": 22,
+  "fkDiffs": 0,
+  "checkDiffs": 0,
+  "migrationRecords": 4,
+  "initialRows": 1,
+  "initialFinished": true,
+  "initialChecksumMatches": true,
+  "domainRows": 3,
+  "domainRolledBack": 2,
+  "domainSuccessful": 1,
+  "activeFailed": 0,
+  "latestDomainChecksumMatches": true,
+  "statusExit": 0
+}

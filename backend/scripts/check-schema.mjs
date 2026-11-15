@@ -13,9 +13,18 @@ const EXPECTED_RELATION_FIELDS = 92;
 const EXPECTED_DELETED_FIELDS = 22;
 const EXPECTED_FOREIGN_KEYS = 46;
 const EXPECTED_ENUMS = 17;
-const EXPECTED_SELF_TESTS = 17;
+const EXPECTED_SELF_TESTS = 20;
 const EXPECTED_COMPOSITE_UNIQUES = 11;
 const EXPECTED_FROZEN_COMPOSITE_UNIQUES = 8;
+
+const EXPECTED_RESTRICT_ON_UPDATE = new Set([
+  'DiningSession.closedBy',
+  'Order.session',
+  'PaymentRecord.session',
+  'PaymentRecord.order',
+  'PaymentRecord.voidedByStaff',
+  'RefundRecord.voidedByStaff',
+]);
 
 function splitRow(line) {
   if (!line.startsWith('|') || !line.endsWith('|')) return null;
@@ -441,15 +450,22 @@ export function validateContract(schema, markdown) {
             .map((value) => value.trim()) ?? [];
         const targetTable = actual.models.get(targetModel)?.table;
         const onDelete = field.attrs.match(/onDelete:\s*(\w+)/)?.[1] ?? null;
+        const explicitOnUpdate = field.attrs.match(/onUpdate:\s*(\w+)/)?.[1] ?? null;
+        const fkName = `${modelName}.${field.name}`;
+        const expectsRestrict = EXPECTED_RESTRICT_ON_UPDATE.has(fkName);
+        if (expectsRestrict && explicitOnUpdate !== 'Restrict')
+          errors.push(`foreign key update ${fkName}: ${explicitOnUpdate ?? 'missing'} != Restrict`);
+        if (!expectsRestrict && explicitOnUpdate !== null && explicitOnUpdate !== 'Cascade')
+          errors.push(`foreign key update ${fkName}: ${explicitOnUpdate} != Cascade`);
         const quoteColumn = (name) => name.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
-        actualFks.set(`${modelName}.${field.name}`, {
+        actualFks.set(fkName, {
           column: columns.map(quoteColumn).join(', '),
           target: `${targetTable}.${references.map(quoteColumn).join(', ')}`,
           cardinality: field.optional ? '0..1' : '1',
           onDelete,
+          onUpdate: expectsRestrict ? 'Restrict' : 'Cascade',
         });
-        if (onDelete !== 'Restrict')
-          errors.push(`foreign key delete ${modelName}.${field.name}: ${onDelete}`);
+        if (onDelete !== 'Restrict') errors.push(`foreign key delete ${fkName}: ${onDelete}`);
       }
     }
     if (actualFks.size !== EXPECTED_FOREIGN_KEYS)
@@ -557,6 +573,24 @@ function runSelfTests(schema, markdown) {
       ),
     ],
     [
+      'affected foreign key update missing',
+      replaceModelBlock(schema, 'DiningSession', (block) =>
+        block.replace(', onUpdate: Restrict', ''),
+      ),
+    ],
+    [
+      'affected foreign key update wrong',
+      replaceModelBlock(schema, 'PaymentRecord', (block) =>
+        block.replace('onUpdate: Restrict', 'onUpdate: Cascade'),
+      ),
+    ],
+    [
+      'unaffected foreign key update drift',
+      replaceModelBlock(schema, 'Staff', (block) =>
+        block.replace('onDelete: Restrict)', 'onDelete: Restrict, onUpdate: Restrict)'),
+      ),
+    ],
+    [
       'relation count drift',
       replaceModelBlock(schema, 'User', (block) => block.replace('  orders    Order[]\n', '')),
     ],
@@ -584,5 +618,5 @@ if (errors.length) {
 }
 
 console.log(
-  `PASS: contract + ${selfTests.count} self-tests (21 models, 202 physical fields, 92 relations, 22 deletions, 8 composite uniques, 46 foreign keys, 17 enums)`,
+  `PASS: contract + ${selfTests.count} self-tests (21 models, 202 physical fields, 92 relations, 22 deletions, 8 composite uniques, 46 foreign keys, 6 Restrict updates, 40 Cascade updates, 17 enums)`,
 );

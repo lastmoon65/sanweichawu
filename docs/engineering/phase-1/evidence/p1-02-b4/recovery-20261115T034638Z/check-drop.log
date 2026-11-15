@@ -1,0 +1,79 @@
+START=2026-11-15T04:06:31.2667349Z
+TABLE=stores
+CHECK=chk_stores_business_day_cutoff_minute
+SQL=ALTER TABLE `stores` DROP CHECK `chk_stores_business_day_cutoff_minute`;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:06:31.4973397Z
+
+START=2026-11-15T04:06:31.5035534Z
+TABLE=product_variants
+CHECK=chk_product_variants_price_fen_nonnegative
+SQL=ALTER TABLE `product_variants` DROP CHECK `chk_product_variants_price_fen_nonnegative`;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:06:31.6850039Z
+
+START=2026-11-15T04:06:31.6852719Z
+TABLE=variant_recipes
+CHECK=chk_variant_recipes_quantity_positive
+SQL=ALTER TABLE `variant_recipes` DROP CHECK `chk_variant_recipes_quantity_positive`;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:06:31.8871724Z
+
+START=2026-11-15T04:06:31.8875047Z
+TABLE=materials
+CHECK=chk_materials_nonnegative_balances
+SQL=ALTER TABLE `materials` DROP CHECK `chk_materials_nonnegative_balances`;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:06:32.0660218Z
+
+START=2026-11-15T04:06:32.0662864Z
+TABLE=materials
+CHECK=chk_materials_version_positive
+SQL=ALTER TABLE `materials` DROP CHECK `chk_materials_version_positive`;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:06:32.2415162Z
+
+START=2026-11-15T04:06:32.2418057Z
+TABLE=stock_movements
+CHECK=chk_stock_movements_balance
+SQL=ALTER TABLE `stock_movements` DROP CHECK `chk_stock_movements_balance`;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:06:32.4002941Z
+
+START=2026-11-15T04:06:32.4005798Z
+TABLE=stock_movements
+CHECK=chk_stock_movements_direction
+SQL=ALTER TABLE `stock_movements` DROP CHECK `chk_stock_movements_direction`;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:06:32.5743650Z
+
+START=2026-11-15T04:06:32.5746202Z
+TABLE=stock_movements
+CHECK=chk_stock_movements_cost_nonnegative
+SQL=ALTER TABLE `stock_movements` DROP CHECK `chk_stock_movements_cost_nonnegative`;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:06:32.7490990Z
+
+START=2026-11-15T04:06:32.7493502Z
+TABLE=loss_records
+CHECK=chk_loss_records_values_nonnegative
+SQL=ALTER TABLE `loss_records` DROP CHECK `chk_loss_records_values_nonnegative`;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:06:32.9448738Z
+
+START=2026-11-15T04:06:32.9451497Z
+TABLE=dining_sessions
+CHECK=chk_dining_sessions_version_positive
+SQL=ALTER TABLE `dining_sessions` DROP CHECK `chk_dining_sessions_version_positive`;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:06:33.1217055Z

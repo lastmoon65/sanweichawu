@@ -1,0 +1,25 @@
+{
+  "runId": "20261115T034638Z",
+  "database": "sanweichawu_b4_main_20261114t152855z",
+  "checkedAtUtc": "2026-11-15T03:49:54.5517883Z",
+  "mysqlVersion": "8.4.13",
+  "evidenceRoot": "docs/engineering/phase-1/evidence/p1-02-b4/recovery-20261115T034638Z",
+  "conditions": {
+    "databaseExact": true,
+    "mysqlVersionExact": true,
+    "businessTableCount21": true,
+    "businessTableSetExact": true,
+    "foreignKeyCount46": true,
+    "allForeignKeyDeleteRestrict": true,
+    "allForeignKeyUpdateCascade": true,
+    "checkCount10": true,
+    "checkSetExact": true,
+    "migrationRecordCount2": true,
+    "initialMigrationOnlyOne": true,
+    "initialMigrationSucceeded": true,
+    "initialChecksumMatchesFile": true,
+    "domainMigrationOnlyOne": true,
+    "domainMigrationFailed": true
+  },
+  "failedConditions": []
+}

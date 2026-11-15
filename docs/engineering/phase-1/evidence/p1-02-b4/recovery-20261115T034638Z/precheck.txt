@@ -1,0 +1,25 @@
+# B4 recovery precheck
+runId=20261115T034638Z
+database=sanweichawu_b4_main_20261114t152855z
+version=8.4.13
+businessTables=21
+foreignKeys=46
+checks=10
+migrations=2
+initialChecksumFile=ad2274e7a964ea753661b8c037c486f4b4a1855c0dfe74ecb9613cf0190ce19b
+initialChecksumDb=ad2274e7a964ea753661b8c037c486f4b4a1855c0dfe74ecb9613cf0190ce19b
+databaseExact=True
+mysqlVersionExact=True
+businessTableCount21=True
+businessTableSetExact=True
+foreignKeyCount46=True
+allForeignKeyDeleteRestrict=True
+allForeignKeyUpdateCascade=True
+checkCount10=True
+checkSetExact=True
+migrationRecordCount2=True
+initialMigrationOnlyOne=True
+initialMigrationSucceeded=True
+initialChecksumMatchesFile=True
+domainMigrationOnlyOne=True
+domainMigrationFailed=True

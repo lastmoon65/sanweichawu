@@ -1,0 +1,126 @@
+INITIAL_STATE_FILE=foreign-keys-before.json
+
+STEP=ALREADY_REBUILT
+NAME=dining_sessions_closed_by_staff_id_fkey
+STATE={"name": "dining_sessions_closed_by_staff_id_fkey", "table": "dining_sessions", "column": "closed_by_staff_id", "onDelete": "RESTRICT", "onUpdate": "RESTRICT", "targetTable": "staff", "targetColumn": "id"}
+
+STEP=DROP
+START=2026-11-15T04:27:49.5770986Z
+SQL=ALTER TABLE `orders` DROP FOREIGN KEY `orders_session_id_fkey`;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:27:49.7570988Z
+
+STEP=VERIFY_MISSING
+NAME=orders_session_id_fkey
+COUNT=0
+EXIT=0
+
+STEP=ADD
+START=2026-11-15T04:27:49.9159917Z
+SQL=ALTER TABLE `orders` ADD CONSTRAINT `orders_session_id_fkey` FOREIGN KEY (`session_id`) REFERENCES `dining_sessions`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:27:50.1653761Z
+
+STEP=VERIFY_RESTORED
+JSON={"name": "orders_session_id_fkey", "table": "orders", "column": "session_id", "onDelete": "RESTRICT", "onUpdate": "RESTRICT", "targetTable": "dining_sessions", "targetColumn": "id"}
+EXIT=0
+
+STEP=DROP
+START=2026-11-15T04:27:50.4625103Z
+SQL=ALTER TABLE `payment_records` DROP FOREIGN KEY `payment_records_session_id_fkey`;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:27:50.6298975Z
+
+STEP=VERIFY_MISSING
+NAME=payment_records_session_id_fkey
+COUNT=0
+EXIT=0
+
+STEP=ADD
+START=2026-11-15T04:27:50.7814880Z
+SQL=ALTER TABLE `payment_records` ADD CONSTRAINT `payment_records_session_id_fkey` FOREIGN KEY (`session_id`) REFERENCES `dining_sessions`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:27:51.0481890Z
+
+STEP=VERIFY_RESTORED
+JSON={"name": "payment_records_session_id_fkey", "table": "payment_records", "column": "session_id", "onDelete": "RESTRICT", "onUpdate": "RESTRICT", "targetTable": "dining_sessions", "targetColumn": "id"}
+EXIT=0
+
+STEP=DROP
+START=2026-11-15T04:27:51.3636929Z
+SQL=ALTER TABLE `payment_records` DROP FOREIGN KEY `payment_records_order_id_fkey`;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:27:51.5484912Z
+
+STEP=VERIFY_MISSING
+NAME=payment_records_order_id_fkey
+COUNT=0
+EXIT=0
+
+STEP=ADD
+START=2026-11-15T04:27:51.7084053Z
+SQL=ALTER TABLE `payment_records` ADD CONSTRAINT `payment_records_order_id_fkey` FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:27:52.0263056Z
+
+STEP=VERIFY_RESTORED
+JSON={"name": "payment_records_order_id_fkey", "table": "payment_records", "column": "order_id", "onDelete": "RESTRICT", "onUpdate": "RESTRICT", "targetTable": "orders", "targetColumn": "id"}
+EXIT=0
+
+STEP=DROP
+START=2026-11-15T04:27:52.3608428Z
+SQL=ALTER TABLE `payment_records` DROP FOREIGN KEY `payment_records_voided_by_staff_id_fkey`;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:27:52.5354029Z
+
+STEP=VERIFY_MISSING
+NAME=payment_records_voided_by_staff_id_fkey
+COUNT=0
+EXIT=0
+
+STEP=ADD
+START=2026-11-15T04:27:52.6959075Z
+SQL=ALTER TABLE `payment_records` ADD CONSTRAINT `payment_records_voided_by_staff_id_fkey` FOREIGN KEY (`voided_by_staff_id`) REFERENCES `staff`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:27:52.9691785Z
+
+STEP=VERIFY_RESTORED
+JSON={"name": "payment_records_voided_by_staff_id_fkey", "table": "payment_records", "column": "voided_by_staff_id", "onDelete": "RESTRICT", "onUpdate": "RESTRICT", "targetTable": "staff", "targetColumn": "id"}
+EXIT=0
+
+STEP=DROP
+START=2026-11-15T04:27:53.3775458Z
+SQL=ALTER TABLE `refund_records` DROP FOREIGN KEY `refund_records_voided_by_staff_id_fkey`;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:27:53.5418970Z
+
+STEP=VERIFY_MISSING
+NAME=refund_records_voided_by_staff_id_fkey
+COUNT=0
+EXIT=0
+
+STEP=ADD
+START=2026-11-15T04:27:53.6919177Z
+SQL=ALTER TABLE `refund_records` ADD CONSTRAINT `refund_records_voided_by_staff_id_fkey` FOREIGN KEY (`voided_by_staff_id`) REFERENCES `staff`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+EXIT=0
+OUTPUT=
+END=2026-11-15T04:27:53.9340302Z
+
+STEP=VERIFY_RESTORED
+JSON={"name": "refund_records_voided_by_staff_id_fkey", "table": "refund_records", "column": "voided_by_staff_id", "onDelete": "RESTRICT", "onUpdate": "RESTRICT", "targetTable": "staff", "targetColumn": "id"}
+EXIT=0
+
+STEP=FAILURE_ADD
+SQL=ALTER TABLE failure_probe ADD CONSTRAINT fk_failure_probe FOREIGN KEY (parent_id) REFERENCES missing_parent_table(id) ON DELETE RESTRICT ON UPDATE RESTRICT;
+EXIT=1
+OUTPUT=ERROR 1824 (HY000) at line 1: Failed to open the referenced table 'missing_parent_table'
+STATE=FK_COUNT=0 TABLE_EXISTS=1

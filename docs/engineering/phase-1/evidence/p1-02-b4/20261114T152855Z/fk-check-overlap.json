@@ -1,0 +1,107 @@
+[
+  {
+    "table": "dining_sessions",
+    "check": "chk_dining_sessions_closed_fields",
+    "expression": "(`status` = 'OPEN' AND `closed_at` IS NULL AND `closed_by_staff_id` IS NULL) OR (`status` = 'CLOSED' AND `closed_at` IS NOT NULL)",
+    "fkFields": [
+      "dining_sessions.closed_by_staff_id"
+    ],
+    "fkDefinitions": [
+      {
+        "table": "dining_sessions",
+        "column": "closed_by_staff_id",
+        "name": "dining_sessions_closed_by_staff_id_fkey",
+        "targetTable": "staff",
+        "targetColumn": "id",
+        "onDelete": "RESTRICT",
+        "onUpdate": "CASCADE"
+      }
+    ]
+  },
+  {
+    "table": "orders",
+    "check": "chk_orders_channel_session",
+    "expression": "(`channel` = 'DINE' AND `session_id` IS NOT NULL) OR (`channel` = 'TAKEAWAY' AND `session_id` IS NULL)",
+    "fkFields": [
+      "orders.session_id"
+    ],
+    "fkDefinitions": [
+      {
+        "table": "orders",
+        "column": "session_id",
+        "name": "orders_session_id_fkey",
+        "targetTable": "dining_sessions",
+        "targetColumn": "id",
+        "onDelete": "RESTRICT",
+        "onUpdate": "CASCADE"
+      }
+    ]
+  },
+  {
+    "table": "payment_records",
+    "check": "chk_payment_records_target_xor",
+    "expression": "(`session_id` IS NULL) <> (`order_id` IS NULL)",
+    "fkFields": [
+      "payment_records.order_id",
+      "payment_records.session_id"
+    ],
+    "fkDefinitions": [
+      {
+        "table": "payment_records",
+        "column": "order_id",
+        "name": "payment_records_order_id_fkey",
+        "targetTable": "orders",
+        "targetColumn": "id",
+        "onDelete": "RESTRICT",
+        "onUpdate": "CASCADE"
+      },
+      {
+        "table": "payment_records",
+        "column": "session_id",
+        "name": "payment_records_session_id_fkey",
+        "targetTable": "dining_sessions",
+        "targetColumn": "id",
+        "onDelete": "RESTRICT",
+        "onUpdate": "CASCADE"
+      }
+    ]
+  },
+  {
+    "table": "payment_records",
+    "check": "chk_payment_records_void_audit",
+    "expression": "(`status` = 'ACTIVE' AND `voided_at` IS NULL AND `voided_by_staff_id` IS NULL AND `void_reason` IS NULL) OR (`status` = 'VOIDED' AND `voided_at` IS NOT NULL AND `voided_by_staff_id` IS NOT NULL AND `void_reason` IS NOT NULL)",
+    "fkFields": [
+      "payment_records.voided_by_staff_id"
+    ],
+    "fkDefinitions": [
+      {
+        "table": "payment_records",
+        "column": "voided_by_staff_id",
+        "name": "payment_records_voided_by_staff_id_fkey",
+        "targetTable": "staff",
+        "targetColumn": "id",
+        "onDelete": "RESTRICT",
+        "onUpdate": "CASCADE"
+      }
+    ]
+  },
+  {
+    "table": "refund_records",
+    "check": "chk_refund_records_void_audit",
+    "expression": "(`status` = 'ACTIVE' AND `voided_at` IS NULL AND `voided_by_staff_id` IS NULL AND `void_reason` IS NULL) OR (`status` = 'VOIDED' AND `voided_at` IS NOT NULL AND `voided_by_staff_id` IS NOT NULL AND `void_reason` IS NOT NULL)",
+    "fkFields": [
+      "refund_records.voided_by_staff_id"
+    ],
+    "fkDefinitions": [
+      {
+        "table": "refund_records",
+        "column": "voided_by_staff_id",
+        "name": "refund_records_voided_by_staff_id_fkey",
+        "targetTable": "staff",
+        "targetColumn": "id",
+        "onDelete": "RESTRICT",
+        "onUpdate": "CASCADE"
+      }
+    ]
+  }
+]

@@ -1,0 +1,5 @@
+DROP_EXIT=0
+DROP_OUTPUT=
+ADD_EXIT=1
+ADD_OUTPUT=ERROR 1824 (HY000) at line 1: Failed to open the referenced table 'missing_parent_table'
+STATE=FK_COUNT=0 TABLE_EXISTS=1

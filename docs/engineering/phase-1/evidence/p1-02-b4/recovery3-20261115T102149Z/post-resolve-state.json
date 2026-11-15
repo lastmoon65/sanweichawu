@@ -1,0 +1,14 @@
+{
+  "migrationCount": 3,
+  "initialCount": 1,
+  "initialFinished": true,
+  "initialRolledBack": false,
+  "initialChecksumMatches": true,
+  "domainCount": 2,
+  "domainRolledBackCount": 2,
+  "domainFinishedCount": 0,
+  "activeFailedCount": 0,
+  "foreignKeys": 46,
+  "cascadeUpdates": 46,
+  "checkCount": 0
+}

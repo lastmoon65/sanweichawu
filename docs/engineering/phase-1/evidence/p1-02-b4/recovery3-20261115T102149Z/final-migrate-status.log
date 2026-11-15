@@ -1,0 +1,7 @@
+Prisma schema loaded from backend\prisma\schema.prisma
+Datasource "db": MySQL database "sanweichawu_b4_main_20261114t152855z" at "127.0.0.1:33316"
+
+2 migrations found in prisma/migrations
+
+Database schema is up to date!
+exitCode=0

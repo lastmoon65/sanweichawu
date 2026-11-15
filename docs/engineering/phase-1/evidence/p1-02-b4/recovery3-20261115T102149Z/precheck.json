@@ -1,0 +1,123 @@
+{
+  "runId": "recovery3-20261115T102149Z",
+  "checkedAtUtc": "2026-11-15T10:21:51.0925269Z",
+  "database": "sanweichawu_b4_main_20261114t152855z",
+  "mysqlVersion": "8.4.13",
+  "tableCount": 21,
+  "columnCount": 202,
+  "foreignKeyCount": 46,
+  "deleteRestrictCount": 46,
+  "updateCascadeCount": 46,
+  "checkCount": 0,
+  "targetFks": [
+    {
+      "name": "dining_sessions_closed_by_staff_id_fkey",
+      "table": "dining_sessions",
+      "column": "closed_by_staff_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "staff",
+      "targetColumn": "id"
+    },
+    {
+      "name": "orders_session_id_fkey",
+      "table": "orders",
+      "column": "session_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "dining_sessions",
+      "targetColumn": "id"
+    },
+    {
+      "name": "payment_records_order_id_fkey",
+      "table": "payment_records",
+      "column": "order_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "orders",
+      "targetColumn": "id"
+    },
+    {
+      "name": "payment_records_session_id_fkey",
+      "table": "payment_records",
+      "column": "session_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "dining_sessions",
+      "targetColumn": "id"
+    },
+    {
+      "name": "payment_records_voided_by_staff_id_fkey",
+      "table": "payment_records",
+      "column": "voided_by_staff_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "staff",
+      "targetColumn": "id"
+    },
+    {
+      "name": "refund_records_voided_by_staff_id_fkey",
+      "table": "refund_records",
+      "column": "voided_by_staff_id",
+      "onDelete": "RESTRICT",
+      "onUpdate": "CASCADE",
+      "targetTable": "staff",
+      "targetColumn": "id"
+    }
+  ],
+  "migrations": [
+    {
+      "logs": null,
+      "checksum": "ad2274e7a964ea753661b8c037c486f4b4a1855c0dfe74ecb9613cf0190ce19b",
+      "startedAt": "2026-11-14 15:29:03.748000",
+      "finishedAt": "2026-11-14 15:29:12.212000",
+      "rolledBackAt": null,
+      "migrationName": "20261114120000_initial_schema",
+      "appliedStepsCount": 1
+    },
+    {
+      "logs": "A migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve\\n\\nMigration name: 20261114120100_domain_constraints\\n\\nDatabase error code: 3823\\n\\nDatabase error:\\nColumn 'closed_by_staff_id' cannot be used in a check constraint 'chk_dining_sessions_closed_fields': needed in a foreign key constraint 'dining_sessions_closed_by_staff_id_fkey' referential action.\\n\\nPlease check the query number 11 from the migration file.\\n\\n",
+      "checksum": "8c07acfd2f657d5cf1e58a1250aa315416a6d73d97cf1bc9b2729092332c4333",
+      "startedAt": "2026-11-14 15:29:12.221000",
+      "finishedAt": null,
+      "rolledBackAt": "2026-11-15 04:19:44.734000",
+      "migrationName": "20261114120100_domain_constraints",
+      "appliedStepsCount": 0
+    },
+    {
+      "logs": "A migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve\\n\\nMigration name: 20261114120100_domain_constraints\\n\\nDatabase error code: 1826\\n\\nDatabase error:\\nDuplicate foreign key constraint name 'dining_sessions_closed_by_staff_id_fkey'\\n\\nPlease check the query number 1 from the migration file.\\n\\n",
+      "checksum": "c0e4aa640f4853e7cd7ea702562d151d515e3b64f826ebab2baa6361e461498a",
+      "startedAt": "2026-11-15 04:20:51.050000",
+      "finishedAt": null,
+      "rolledBackAt": null,
+      "migrationName": "20261114120100_domain_constraints",
+      "appliedStepsCount": 0
+    }
+  ],
+  "initialFileSha": "AD2274E7A964EA753661B8C037C486F4B4A1855C0DFE74ECB9613CF0190CE19B",
+  "domainFileSha": "A8E247D1F2555AC2A1FD505369BEC1532EDEA6CA44847E446AF3D4BF426F4949",
+  "checks": {
+    "databaseExact": true,
+    "mysqlVersionExact": true,
+    "initialFileShaExact": true,
+    "domainFileShaExact": true,
+    "tables21": true,
+    "columns202": true,
+    "foreignKeys46": true,
+    "allDeleteRestrict": true,
+    "allUpdateCascade": true,
+    "checkCount0": true,
+    "sixTargetsPresent": true,
+    "sixTargetsDeleteRestrict": true,
+    "sixTargetsUpdateCascade": true,
+    "migrationRecordCount3": true,
+    "initialCount1": true,
+    "initialFinished": true,
+    "initialNotRolledBack": true,
+    "initialDbChecksumMatches": true,
+    "domainCount2": true,
+    "oneRolledBack": true,
+    "exactlyOneActiveFailed": true
+  },
+  "failed": []
+}

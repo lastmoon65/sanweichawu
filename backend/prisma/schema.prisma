@@ -381,7 +381,7 @@ model DiningSession {
   updatedAt       DateTime            @updatedAt @map("updated_at") @db.DateTime(3)
   store           Store               @relation(fields: [storeId], references: [id], onDelete: Restrict)
   table           DiningTable         @relation(fields: [tableId], references: [id], onDelete: Restrict)
-  closedBy        Staff?              @relation("SessionCloser", fields: [closedByStaffId], references: [id], onDelete: Restrict)
+  closedBy        Staff?              @relation("SessionCloser", fields: [closedByStaffId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   orders          Order[]
   payments        PaymentRecord[]
 
@@ -411,7 +411,7 @@ model Order {
   updatedAt      DateTime        @updatedAt @map("updated_at") @db.DateTime(3)
   store          Store           @relation(fields: [storeId], references: [id], onDelete: Restrict)
   customer       User            @relation(fields: [customerUserId], references: [id], onDelete: Restrict)
-  session        DiningSession?  @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  session        DiningSession?  @relation(fields: [sessionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   items          OrderItem[]
   stockMovements StockMovement[]
   lossRecords    LossRecord[]
@@ -503,10 +503,10 @@ model PaymentRecord {
   createdAt       DateTime       @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt       DateTime       @updatedAt @map("updated_at") @db.DateTime(3)
   store           Store          @relation(fields: [storeId], references: [id], onDelete: Restrict)
-  session         DiningSession? @relation(fields: [sessionId], references: [id], onDelete: Restrict)
-  order           Order?         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  session         DiningSession? @relation(fields: [sessionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  order           Order?         @relation(fields: [orderId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   operatorStaff   Staff?         @relation("PaymentOperator", fields: [operatorStaffId], references: [id], onDelete: Restrict)
-  voidedByStaff   Staff?         @relation("PaymentVoidOperator", fields: [voidedByStaffId], references: [id], onDelete: Restrict)
+  voidedByStaff   Staff?         @relation("PaymentVoidOperator", fields: [voidedByStaffId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   refunds         RefundRecord[]
 
   @@index([storeId, status, receivedAt])
@@ -532,7 +532,7 @@ model RefundRecord {
   updatedAt       DateTime      @updatedAt @map("updated_at") @db.DateTime(3)
   paymentRecord   PaymentRecord @relation(fields: [paymentRecordId], references: [id], onDelete: Restrict)
   operatorStaff   Staff?        @relation("RefundOperator", fields: [operatorStaffId], references: [id], onDelete: Restrict)
-  voidedByStaff   Staff?        @relation("RefundVoidOperator", fields: [voidedByStaffId], references: [id], onDelete: Restrict)
+  voidedByStaff   Staff?        @relation("RefundVoidOperator", fields: [voidedByStaffId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   @@index([paymentRecordId, status, refundedAt])
   @@map("refund_records")

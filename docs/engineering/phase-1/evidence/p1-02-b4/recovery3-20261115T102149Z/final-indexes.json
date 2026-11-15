@@ -1,0 +1,842 @@
+[
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "users",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "users_openid_key",
+    "table": "users",
+    "column": "openid",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "staff",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "staff_store_id_fkey",
+    "table": "staff",
+    "column": "store_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "categories",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "categories_store_id_name_key",
+    "table": "categories",
+    "column": "store_id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 2,
+    "name": "categories_store_id_name_key",
+    "table": "categories",
+    "column": "name",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "products",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "products_store_id_name_key",
+    "table": "products",
+    "column": "store_id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 2,
+    "name": "products_store_id_name_key",
+    "table": "products",
+    "column": "name",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "products_category_id_status_sort_order_idx",
+    "table": "products",
+    "column": "category_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 2,
+    "name": "products_category_id_status_sort_order_idx",
+    "table": "products",
+    "column": "status",
+    "nonUnique": 1
+  },
+  {
+    "seq": 3,
+    "name": "products_category_id_status_sort_order_idx",
+    "table": "products",
+    "column": "sort_order",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "variant_option_groups",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "variant_option_groups_variant_id_name_key",
+    "table": "variant_option_groups",
+    "column": "variant_id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 2,
+    "name": "variant_option_groups_variant_id_name_key",
+    "table": "variant_option_groups",
+    "column": "name",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "variant_option_values",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "variant_option_values_option_group_id_name_key",
+    "table": "variant_option_values",
+    "column": "option_group_id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 2,
+    "name": "variant_option_values_option_group_id_name_key",
+    "table": "variant_option_values",
+    "column": "name",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "recipe_modifiers",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "recipe_modifiers_variant_id_option_value_id_material_id_targ_key",
+    "table": "recipe_modifiers",
+    "column": "variant_id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 2,
+    "name": "recipe_modifiers_variant_id_option_value_id_material_id_targ_key",
+    "table": "recipe_modifiers",
+    "column": "option_value_id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 3,
+    "name": "recipe_modifiers_variant_id_option_value_id_material_id_targ_key",
+    "table": "recipe_modifiers",
+    "column": "material_id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 4,
+    "name": "recipe_modifiers_variant_id_option_value_id_material_id_targ_key",
+    "table": "recipe_modifiers",
+    "column": "target_role",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "recipe_modifiers_option_value_id_idx",
+    "table": "recipe_modifiers",
+    "column": "option_value_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "recipe_modifiers_material_id_fkey",
+    "table": "recipe_modifiers",
+    "column": "material_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "dining_tables",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "dining_tables_store_id_code_key",
+    "table": "dining_tables",
+    "column": "store_id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 2,
+    "name": "dining_tables_store_id_code_key",
+    "table": "dining_tables",
+    "column": "code",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "order_item_options",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "order_item_options_order_item_id_option_value_id_key",
+    "table": "order_item_options",
+    "column": "order_item_id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 2,
+    "name": "order_item_options_order_item_id_option_value_id_key",
+    "table": "order_item_options",
+    "column": "option_value_id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "order_item_options_option_value_id_idx",
+    "table": "order_item_options",
+    "column": "option_value_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "stores",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "product_variants",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "product_variants_product_id_name_key",
+    "table": "product_variants",
+    "column": "product_id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 2,
+    "name": "product_variants_product_id_name_key",
+    "table": "product_variants",
+    "column": "name",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "product_variants_product_id_status_sort_order_idx",
+    "table": "product_variants",
+    "column": "product_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 2,
+    "name": "product_variants_product_id_status_sort_order_idx",
+    "table": "product_variants",
+    "column": "status",
+    "nonUnique": 1
+  },
+  {
+    "seq": 3,
+    "name": "product_variants_product_id_status_sort_order_idx",
+    "table": "product_variants",
+    "column": "sort_order",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "variant_recipes",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "variant_recipes_variant_id_material_id_role_key",
+    "table": "variant_recipes",
+    "column": "variant_id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 2,
+    "name": "variant_recipes_variant_id_material_id_role_key",
+    "table": "variant_recipes",
+    "column": "material_id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 3,
+    "name": "variant_recipes_variant_id_material_id_role_key",
+    "table": "variant_recipes",
+    "column": "role",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "variant_recipes_material_id_fkey",
+    "table": "variant_recipes",
+    "column": "material_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "materials",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "materials_store_id_name_key",
+    "table": "materials",
+    "column": "store_id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 2,
+    "name": "materials_store_id_name_key",
+    "table": "materials",
+    "column": "name",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "materials_store_id_status_idx",
+    "table": "materials",
+    "column": "store_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 2,
+    "name": "materials_store_id_status_idx",
+    "table": "materials",
+    "column": "status",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "stock_movements",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "stock_movements_dedupe_key_key",
+    "table": "stock_movements",
+    "column": "dedupe_key",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "stock_movements_material_id_created_at_idx",
+    "table": "stock_movements",
+    "column": "material_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 2,
+    "name": "stock_movements_material_id_created_at_idx",
+    "table": "stock_movements",
+    "column": "created_at",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "stock_movements_order_id_movement_type_idx",
+    "table": "stock_movements",
+    "column": "order_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 2,
+    "name": "stock_movements_order_id_movement_type_idx",
+    "table": "stock_movements",
+    "column": "movement_type",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "stock_movements_store_id_movement_type_created_at_idx",
+    "table": "stock_movements",
+    "column": "store_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 2,
+    "name": "stock_movements_store_id_movement_type_created_at_idx",
+    "table": "stock_movements",
+    "column": "movement_type",
+    "nonUnique": 1
+  },
+  {
+    "seq": 3,
+    "name": "stock_movements_store_id_movement_type_created_at_idx",
+    "table": "stock_movements",
+    "column": "created_at",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "stock_movements_order_item_id_fkey",
+    "table": "stock_movements",
+    "column": "order_item_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "stock_movements_operator_staff_id_fkey",
+    "table": "stock_movements",
+    "column": "operator_staff_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "loss_records",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "loss_records_dedupe_key_key",
+    "table": "loss_records",
+    "column": "dedupe_key",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "loss_records_stock_movement_id_key",
+    "table": "loss_records",
+    "column": "stock_movement_id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "loss_records_material_id_occurred_at_idx",
+    "table": "loss_records",
+    "column": "material_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 2,
+    "name": "loss_records_material_id_occurred_at_idx",
+    "table": "loss_records",
+    "column": "occurred_at",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "loss_records_store_id_occurred_at_idx",
+    "table": "loss_records",
+    "column": "store_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 2,
+    "name": "loss_records_store_id_occurred_at_idx",
+    "table": "loss_records",
+    "column": "occurred_at",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "loss_records_order_id_fkey",
+    "table": "loss_records",
+    "column": "order_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "loss_records_order_item_id_fkey",
+    "table": "loss_records",
+    "column": "order_item_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "loss_records_operator_staff_id_fkey",
+    "table": "loss_records",
+    "column": "operator_staff_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "dining_sessions",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "dining_sessions_table_id_status_idx",
+    "table": "dining_sessions",
+    "column": "table_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 2,
+    "name": "dining_sessions_table_id_status_idx",
+    "table": "dining_sessions",
+    "column": "status",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "dining_sessions_store_id_status_opened_at_idx",
+    "table": "dining_sessions",
+    "column": "store_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 2,
+    "name": "dining_sessions_store_id_status_opened_at_idx",
+    "table": "dining_sessions",
+    "column": "status",
+    "nonUnique": 1
+  },
+  {
+    "seq": 3,
+    "name": "dining_sessions_store_id_status_opened_at_idx",
+    "table": "dining_sessions",
+    "column": "opened_at",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "dining_sessions_closed_by_staff_id_fkey",
+    "table": "dining_sessions",
+    "column": "closed_by_staff_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "orders",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "orders_order_no_key",
+    "table": "orders",
+    "column": "order_no",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "orders_idempotency_key_key",
+    "table": "orders",
+    "column": "idempotency_key",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "orders_store_id_status_created_at_idx",
+    "table": "orders",
+    "column": "store_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 2,
+    "name": "orders_store_id_status_created_at_idx",
+    "table": "orders",
+    "column": "status",
+    "nonUnique": 1
+  },
+  {
+    "seq": 3,
+    "name": "orders_store_id_status_created_at_idx",
+    "table": "orders",
+    "column": "created_at",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "orders_session_id_status_idx",
+    "table": "orders",
+    "column": "session_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 2,
+    "name": "orders_session_id_status_idx",
+    "table": "orders",
+    "column": "status",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "orders_customer_user_id_created_at_idx",
+    "table": "orders",
+    "column": "customer_user_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 2,
+    "name": "orders_customer_user_id_created_at_idx",
+    "table": "orders",
+    "column": "created_at",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "orders_completed_at_idx",
+    "table": "orders",
+    "column": "completed_at",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "order_items",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "order_items_order_id_idx",
+    "table": "order_items",
+    "column": "order_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "order_items_product_id_created_at_idx",
+    "table": "order_items",
+    "column": "product_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 2,
+    "name": "order_items_product_id_created_at_idx",
+    "table": "order_items",
+    "column": "created_at",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "order_items_variant_id_created_at_idx",
+    "table": "order_items",
+    "column": "variant_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 2,
+    "name": "order_items_variant_id_created_at_idx",
+    "table": "order_items",
+    "column": "created_at",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "order_item_materials",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "order_item_materials_order_item_id_material_id_source_key",
+    "table": "order_item_materials",
+    "column": "order_item_id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 2,
+    "name": "order_item_materials_order_item_id_material_id_source_key",
+    "table": "order_item_materials",
+    "column": "material_id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 3,
+    "name": "order_item_materials_order_item_id_material_id_source_key",
+    "table": "order_item_materials",
+    "column": "source",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "order_item_materials_material_id_idx",
+    "table": "order_item_materials",
+    "column": "material_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "payment_records",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "payment_records_payment_no_key",
+    "table": "payment_records",
+    "column": "payment_no",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "payment_records_idempotency_key_key",
+    "table": "payment_records",
+    "column": "idempotency_key",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "payment_records_store_id_status_received_at_idx",
+    "table": "payment_records",
+    "column": "store_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 2,
+    "name": "payment_records_store_id_status_received_at_idx",
+    "table": "payment_records",
+    "column": "status",
+    "nonUnique": 1
+  },
+  {
+    "seq": 3,
+    "name": "payment_records_store_id_status_received_at_idx",
+    "table": "payment_records",
+    "column": "received_at",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "payment_records_session_id_status_idx",
+    "table": "payment_records",
+    "column": "session_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 2,
+    "name": "payment_records_session_id_status_idx",
+    "table": "payment_records",
+    "column": "status",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "payment_records_order_id_status_idx",
+    "table": "payment_records",
+    "column": "order_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 2,
+    "name": "payment_records_order_id_status_idx",
+    "table": "payment_records",
+    "column": "status",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "payment_records_operator_staff_id_fkey",
+    "table": "payment_records",
+    "column": "operator_staff_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "payment_records_voided_by_staff_id_fkey",
+    "table": "payment_records",
+    "column": "voided_by_staff_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "PRIMARY",
+    "table": "refund_records",
+    "column": "id",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "refund_records_refund_no_key",
+    "table": "refund_records",
+    "column": "refund_no",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "refund_records_idempotency_key_key",
+    "table": "refund_records",
+    "column": "idempotency_key",
+    "nonUnique": 0
+  },
+  {
+    "seq": 1,
+    "name": "refund_records_payment_record_id_status_refunded_at_idx",
+    "table": "refund_records",
+    "column": "payment_record_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 2,
+    "name": "refund_records_payment_record_id_status_refunded_at_idx",
+    "table": "refund_records",
+    "column": "status",
+    "nonUnique": 1
+  },
+  {
+    "seq": 3,
+    "name": "refund_records_payment_record_id_status_refunded_at_idx",
+    "table": "refund_records",
+    "column": "refunded_at",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "refund_records_operator_staff_id_fkey",
+    "table": "refund_records",
+    "column": "operator_staff_id",
+    "nonUnique": 1
+  },
+  {
+    "seq": 1,
+    "name": "refund_records_voided_by_staff_id_fkey",
+    "table": "refund_records",
+    "column": "voided_by_staff_id",
+    "nonUnique": 1
+  }
+]

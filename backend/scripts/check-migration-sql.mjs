@@ -14,7 +14,7 @@ const EXPECTED_FOREIGN_KEYS = 46;
 const EXPECTED_UNIQUE_INDEXES = 21;
 const EXPECTED_INDEXES = 24;
 const EXPECTED_CHECK_COUNT = 22;
-const EXPECTED_SELF_TESTS = 11;
+const EXPECTED_SELF_TESTS = 18;
 
 const EXPECTED_CHECKS = {
   chk_stores_business_day_cutoff_minute: {
@@ -113,6 +113,45 @@ const EXPECTED_CHECKS = {
     table: 'refund_records',
     expression:
       "((`status`='ACTIVE'AND`voided_at`ISNULLAND`voided_by_staff_id`ISNULLAND`void_reason`ISNULL)OR(`status`='VOIDED'AND`voided_at`ISNOTNULLAND`voided_by_staff_id`ISNOTNULLAND`void_reason`ISNOTNULL))",
+  },
+};
+
+const EXPECTED_FK_UPDATE_OVERRIDES = {
+  dining_sessions_closed_by_staff_id_fkey: {
+    table: 'dining_sessions',
+    column: 'closed_by_staff_id',
+    targetTable: 'staff',
+    targetColumn: 'id',
+  },
+  orders_session_id_fkey: {
+    table: 'orders',
+    column: 'session_id',
+    targetTable: 'dining_sessions',
+    targetColumn: 'id',
+  },
+  payment_records_session_id_fkey: {
+    table: 'payment_records',
+    column: 'session_id',
+    targetTable: 'dining_sessions',
+    targetColumn: 'id',
+  },
+  payment_records_order_id_fkey: {
+    table: 'payment_records',
+    column: 'order_id',
+    targetTable: 'orders',
+    targetColumn: 'id',
+  },
+  payment_records_voided_by_staff_id_fkey: {
+    table: 'payment_records',
+    column: 'voided_by_staff_id',
+    targetTable: 'staff',
+    targetColumn: 'id',
+  },
+  refund_records_voided_by_staff_id_fkey: {
+    table: 'refund_records',
+    column: 'voided_by_staff_id',
+    targetTable: 'staff',
+    targetColumn: 'id',
   },
 };
 
@@ -448,10 +487,11 @@ function parseConstraintSql(sql) {
   const clean = stripComments(sql);
   for (const forbidden of [
     /\bCREATE\s+TRIGGER\b/i,
-    /\bDROP\b/i,
+    /\bDROP\s+(?:TABLE|DATABASE|INDEX|COLUMN|CHECK)\b/i,
+    /\bTRUNCATE\b/i,
     /\bINSERT\b/i,
     /\bUPDATE\s+\S+\s+SET\b/i,
-    /\bDELETE\b/i,
+    /\bDELETE\s+FROM\b/i,
     /\bGENERATED\s+ALWAYS\b/i,
   ]) {
     if (forbidden.test(clean)) {
@@ -464,23 +504,65 @@ function parseConstraintSql(sql) {
     .map((statement) => statement.trim())
     .filter(Boolean);
   const constraints = [];
-  for (const statement of statements) {
-    const match = statement.match(
-      /^ALTER TABLE `([^`]+)`\s+ADD CONSTRAINT `([^`]+)`\s+CHECK\s*\(([\s\S]*)\)$/,
-    );
-    if (!match) {
-      errors.push(`unexpected statement: ${statement.slice(0, 80)}`);
+  const fkDrops = [];
+  const fkAdds = [];
+  let firstCheckIndex = Number.POSITIVE_INFINITY;
+  let lastForeignKeyChangeIndex = -1;
+
+  for (const [statementIndex, statement] of statements.entries()) {
+    const drop = statement.match(/^ALTER TABLE `([^`]+)`\s+DROP FOREIGN KEY `([^`]+)`$/);
+    if (drop) {
+      fkDrops.push({ table: drop[1], name: drop[2], statementIndex });
+      lastForeignKeyChangeIndex = statementIndex;
       continue;
     }
-    constraints.push({
-      table: match[1],
-      name: match[2],
-      expression: normalizeCheckExpression(match[3]),
-    });
+
+    const add = statement.match(
+      /^ALTER TABLE `([^`]+)`\s+ADD CONSTRAINT `([^`]+)`\s+FOREIGN KEY \(`([^`]+)`\)\s+REFERENCES `([^`]+)`\(`([^`]+)`\)\s+ON DELETE (\w+)\s+ON UPDATE (\w+)$/,
+    );
+    if (add) {
+      fkAdds.push({
+        table: add[1],
+        name: add[2],
+        column: add[3],
+        targetTable: add[4],
+        targetColumn: add[5],
+        onDelete: add[6],
+        onUpdate: add[7],
+        statementIndex,
+      });
+      lastForeignKeyChangeIndex = statementIndex;
+      continue;
+    }
+
+    const check = statement.match(
+      /^ALTER TABLE `([^`]+)`\s+ADD CONSTRAINT `([^`]+)`\s+CHECK\s*\(([\s\S]*)\)$/,
+    );
+    if (check) {
+      constraints.push({
+        table: check[1],
+        name: check[2],
+        expression: normalizeCheckExpression(check[3]),
+      });
+      firstCheckIndex = Math.min(firstCheckIndex, statementIndex);
+      continue;
+    }
+
+    errors.push(`unexpected statement: ${statement.slice(0, 100)}`);
   }
 
   if (constraints.length !== EXPECTED_CHECK_COUNT) {
     errors.push(`check count ${constraints.length}`);
+  }
+  const expectedForeignKeyNames = Object.keys(EXPECTED_FK_UPDATE_OVERRIDES);
+  if (fkDrops.length !== expectedForeignKeyNames.length) {
+    errors.push(`foreign key drop count ${fkDrops.length}`);
+  }
+  if (fkAdds.length !== expectedForeignKeyNames.length) {
+    errors.push(`foreign key add count ${fkAdds.length}`);
+  }
+  if (lastForeignKeyChangeIndex >= firstCheckIndex) {
+    errors.push('all foreign key DROP/ADD statements must precede every CHECK');
   }
 
   const actual = new Map();
@@ -513,19 +595,133 @@ function parseConstraintSql(sql) {
     if (!actual.has(name)) errors.push(`missing check ${name}`);
   }
 
+  for (const name of expectedForeignKeyNames) {
+    const expected = EXPECTED_FK_UPDATE_OVERRIDES[name];
+    const drops = fkDrops.filter((entry) => entry.name === name);
+    const adds = fkAdds.filter((entry) => entry.name === name);
+    if (drops.length !== 1) errors.push(`foreign key ${name} drop count ${drops.length}`);
+    if (adds.length !== 1) errors.push(`foreign key ${name} add count ${adds.length}`);
+    if (drops.length === 1 && drops[0].table !== expected.table) {
+      errors.push(`foreign key ${name} drop table: ${drops[0].table} != ${expected.table}`);
+    }
+    if (adds.length === 1) {
+      const add = adds[0];
+      for (const key of ['table', 'column', 'targetTable', 'targetColumn']) {
+        if (add[key] !== expected[key]) {
+          errors.push(`foreign key ${name} add.${key}: ${add[key]} != ${expected[key]}`);
+        }
+      }
+      if (add.onDelete !== 'RESTRICT') {
+        errors.push(`foreign key ${name} add.onDelete: ${add.onDelete}`);
+      }
+      if (add.onUpdate !== 'RESTRICT') {
+        errors.push(`foreign key ${name} add.onUpdate: ${add.onUpdate}`);
+      }
+    }
+    if (
+      drops.length === 1 &&
+      adds.length === 1 &&
+      drops[0].statementIndex >= adds[0].statementIndex
+    ) {
+      errors.push(`foreign key ${name} DROP must precede ADD`);
+    }
+  }
+
+  for (const entry of [...fkDrops, ...fkAdds]) {
+    if (!expectedForeignKeyNames.includes(entry.name)) {
+      errors.push(`unexpected foreign key change ${entry.name}`);
+    }
+  }
+
   const open = (clean.match(/\(/g) ?? []).length;
   const close = (clean.match(/\)/g) ?? []).length;
   if (open !== close) errors.push(`unbalanced parentheses ${open} != ${close}`);
 
-  return { errors, constraints };
+  return { errors, constraints, fkDrops, fkAdds };
 }
+function expectedFinalForeignKeys(schemaInfo) {
+  const expected = [];
+  for (const model of schemaInfo.models.values()) {
+    for (const field of model.fields) {
+      if (!field.attrs.includes('@relation') || !field.attrs.includes('fields:')) continue;
+      const targetModel = schemaInfo.models.get(field.baseType);
+      const sourceField = field.attrs
+        .match(/fields:\s*\[([^\]]+)\]/)[1]
+        .split(',')[0]
+        .trim();
+      const targetField = field.attrs
+        .match(/references:\s*\[([^\]]+)\]/)[1]
+        .split(',')[0]
+        .trim();
+      const sourceColumn = mappedColumn(model, sourceField);
+      const targetColumn = mappedColumn(targetModel, targetField);
+      const onDelete = field.attrs.match(/onDelete:\s*(\w+)/)?.[1] ?? null;
+      const onUpdate = field.attrs.match(/onUpdate:\s*(\w+)/)?.[1] ?? 'Cascade';
+      expected.push(
+        `${model.table}.${sourceColumn}->${targetModel.table}.${targetColumn}:${onDelete.toUpperCase()}:${onUpdate.toUpperCase()}`,
+      );
+    }
+  }
+  return expected;
+}
+
 function validateMigrationSql(schemaText, initialSql, constraintSql) {
   const schemaInfo = parseSchema(schemaText);
   const initial = parseInitialSql(initialSql, schemaInfo);
   const constraints = parseConstraintSql(constraintSql);
-  return { errors: [...initial.errors, ...constraints.errors], initial, constraints };
-}
+  const errors = [...initial.errors, ...constraints.errors];
 
+  const effectiveFks = new Map(initial.foreignKeys.map((entry) => [entry.name, { ...entry }]));
+  for (const add of constraints.fkAdds) {
+    const current = effectiveFks.get(add.name);
+    if (!current) {
+      errors.push(`foreign key ADD targets unknown FK ${add.name}`);
+      continue;
+    }
+    for (const key of ['table', 'column', 'targetTable', 'targetColumn', 'onDelete']) {
+      if (add[key] !== current[key]) {
+        errors.push(`foreign key ADD ${add.name}.${key}: ${add[key]} != ${current[key]}`);
+      }
+    }
+    effectiveFks.set(add.name, {
+      ...current,
+      onDelete: add.onDelete,
+      onUpdate: add.onUpdate,
+    });
+  }
+
+  const finalFks = [...effectiveFks.values()];
+  const restrictUpdates = finalFks.filter((entry) => entry.onUpdate === 'RESTRICT').length;
+  const cascadeUpdates = finalFks.filter((entry) => entry.onUpdate === 'CASCADE').length;
+  if (finalFks.length !== EXPECTED_FOREIGN_KEYS) {
+    errors.push(`final foreign key count ${finalFks.length}`);
+  }
+  if (restrictUpdates !== Object.keys(EXPECTED_FK_UPDATE_OVERRIDES).length) {
+    errors.push(`final Restrict-update foreign key count ${restrictUpdates}`);
+  }
+  if (cascadeUpdates !== EXPECTED_FOREIGN_KEYS - Object.keys(EXPECTED_FK_UPDATE_OVERRIDES).length) {
+    errors.push(`final Cascade-update foreign key count ${cascadeUpdates}`);
+  }
+  if (finalFks.some((entry) => entry.onDelete !== 'RESTRICT')) {
+    errors.push('final foreign key delete rule mismatch');
+  }
+
+  const actualFinal = finalFks.map(
+    (entry) =>
+      `${entry.table}.${entry.column}->${entry.targetTable}.${entry.targetColumn}:${entry.onDelete}:${entry.onUpdate}`,
+  );
+  const expectedFinal = expectedFinalForeignKeys(schemaInfo);
+  if (JSON.stringify([...actualFinal].sort()) !== JSON.stringify([...expectedFinal].sort())) {
+    errors.push('final foreign key targets or delete/update rules mismatch');
+  }
+
+  return {
+    errors,
+    initial,
+    constraints,
+    final: { foreignKeys: finalFks, restrictUpdates, cascadeUpdates },
+  };
+}
 function runSelfTests(schemaText, initialSql, constraintSql) {
   const cases = [
     {
@@ -559,6 +755,71 @@ function runSelfTests(schemaText, initialSql, constraintSql) {
       expected: /foreign key targets or delete\/update rules mismatch|non-Restrict delete found/,
     },
     {
+      label: 'missing foreign key drop',
+      initial: initialSql,
+      constraints: constraintSql.replace(
+        /ALTER TABLE `dining_sessions`\s+DROP FOREIGN KEY `dining_sessions_closed_by_staff_id_fkey`;\r?\n\r?\n/,
+        '',
+      ),
+      expected: /foreign key drop count|foreign key .* drop count/,
+    },
+    {
+      label: 'missing foreign key add',
+      initial: initialSql,
+      constraints: constraintSql.replace(
+        /ALTER TABLE `dining_sessions`\s+ADD CONSTRAINT `dining_sessions_closed_by_staff_id_fkey`\s+FOREIGN KEY[\s\S]*?ON UPDATE RESTRICT;\r?\n\r?\n/,
+        '',
+      ),
+      expected: /foreign key add count|foreign key .* add count/,
+    },
+    {
+      label: 'foreign key add before drop',
+      initial: initialSql,
+      constraints: constraintSql.replace(
+        /(ALTER TABLE `dining_sessions`\s+DROP FOREIGN KEY `dining_sessions_closed_by_staff_id_fkey`;\r?\n\r?\n)(ALTER TABLE `dining_sessions`\s+ADD CONSTRAINT `dining_sessions_closed_by_staff_id_fkey`\s+FOREIGN KEY[\s\S]*?ON UPDATE RESTRICT;\r?\n\r?\n)/,
+        '$2$1',
+      ),
+      expected: /DROP must precede ADD/,
+    },
+    {
+      label: 'unexpected seventh foreign key change',
+      initial: initialSql,
+      constraints: constraintSql.replace(
+        '-- Store configuration',
+        'ALTER TABLE `staff` DROP FOREIGN KEY `staff_store_id_fkey`;\n\nALTER TABLE `staff` ADD CONSTRAINT `staff_store_id_fkey` FOREIGN KEY (`store_id`) REFERENCES `stores`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;\n\n-- Store configuration',
+      ),
+      expected: /foreign key drop count|foreign key add count|unexpected foreign key change/,
+    },
+    {
+      label: 'foreign key add field drift',
+      initial: initialSql,
+      constraints: constraintSql.replace(
+        'FOREIGN KEY (`closed_by_staff_id`) REFERENCES `staff`(`id`)',
+        'FOREIGN KEY (`store_id`) REFERENCES `staff`(`id`)',
+      ),
+      expected:
+        /foreign key .*add\.column|final foreign key targets or delete\/update rules mismatch/,
+    },
+    {
+      label: 'foreign key add target drift',
+      initial: initialSql,
+      constraints: constraintSql.replace(
+        'FOREIGN KEY (`closed_by_staff_id`) REFERENCES `staff`(`id`)',
+        'FOREIGN KEY (`closed_by_staff_id`) REFERENCES `stores`(`id`)',
+      ),
+      expected:
+        /foreign key .*add\.targetTable|final foreign key targets or delete\/update rules mismatch/,
+    },
+    {
+      label: 'foreign key add delete drift',
+      initial: initialSql,
+      constraints: constraintSql.replace(
+        'ON DELETE RESTRICT ON UPDATE RESTRICT;',
+        'ON DELETE CASCADE ON UPDATE RESTRICT;',
+      ),
+      expected: /foreign key .*add\.onDelete|final foreign key delete rule mismatch/,
+    },
+    {
       label: 'missing unique index',
       initial: initialSql.replace(/^ {4}UNIQUE INDEX `users_openid_key`\(`openid`\),\r?\n/m, ''),
       constraints: constraintSql,
@@ -580,7 +841,7 @@ function runSelfTests(schemaText, initialSql, constraintSql) {
       expected: /forbidden operation .*CREATE\\s\+TRIGGER|forbidden operation/,
     },
     {
-      label: 'missing check',
+      label: 'deleted original check',
       initial: initialSql,
       constraints: constraintSql.replace(
         /ALTER TABLE `payment_records`\s+ADD CONSTRAINT `chk_payment_records_target_xor`[\s\S]*?;\r?\n\r?\n/,
@@ -658,5 +919,5 @@ if (errors.length) {
 }
 
 console.log(
-  `PASS: migration SQL contract + ${selfTests.count} self-tests (${result.initial.tables.size} tables, ${result.initial.columns} columns, ${result.initial.uniqueIndexes.length} unique indexes, ${result.initial.indexes.length} ordinary indexes, ${result.initial.foreignKeys.length} foreign keys, ${result.constraints.constraints.length} checks)`,
+  `PASS: migration SQL contract + ${selfTests.count} self-tests (${result.initial.tables.size} tables, ${result.initial.columns} columns, ${result.initial.uniqueIndexes.length} unique indexes, ${result.initial.indexes.length} ordinary indexes, ${result.initial.foreignKeys.length} initial foreign keys, ${result.constraints.fkDrops.length} FK drops, ${result.constraints.fkAdds.length} FK adds, ${result.final.restrictUpdates} Restrict updates, ${result.final.cascadeUpdates} Cascade updates, ${result.constraints.constraints.length} checks)`,
 );
