@@ -7,15 +7,16 @@ const repoRoot = dirname(projectRoot);
 const schemaPath = join(projectRoot, 'prisma', 'schema.prisma');
 const contractPath = join(repoRoot, 'docs', 'engineering', 'phase-1', 'p1-02-a-field-contract.md');
 
-const EXPECTED_MODEL_COUNT = 21;
-const EXPECTED_PHYSICAL_FIELDS = 202;
-const EXPECTED_RELATION_FIELDS = 92;
+const EXPECTED_MODEL_COUNT = 22;
+const EXPECTED_PHYSICAL_FIELDS = 210;
+const EXPECTED_RELATION_FIELDS = 94;
 const EXPECTED_DELETED_FIELDS = 22;
-const EXPECTED_FOREIGN_KEYS = 46;
+const EXPECTED_FOREIGN_KEYS = 47;
 const EXPECTED_ENUMS = 17;
 const EXPECTED_SELF_TESTS = 20;
 const EXPECTED_COMPOSITE_UNIQUES = 11;
 const EXPECTED_FROZEN_COMPOSITE_UNIQUES = 8;
+const INTERNAL_MODELS = new Set(['BootstrapLock']);
 
 const EXPECTED_RESTRICT_ON_UPDATE = new Set([
   'DiningSession.closedBy',
@@ -290,8 +291,30 @@ export function validateContract(schema, markdown) {
     const expected = parseContract(markdown);
     const actual = parseSchema(schema);
     const expectedModels = [...expected.models.keys()].sort();
-    const actualModels = [...actual.models.keys()].sort();
+    const actualModels = [...actual.models.keys()]
+      .filter((model) => !INTERNAL_MODELS.has(model))
+      .sort();
     compareSets(errors, 'models', expectedModels, actualModels);
+
+    const bootstrapLock = actual.models.get('BootstrapLock');
+    if (!bootstrapLock) {
+      errors.push('internal model BootstrapLock missing');
+    } else {
+      if (bootstrapLock.table !== 'bootstrap_locks')
+        errors.push(`table map BootstrapLock: ${bootstrapLock.table} != bootstrap_locks`);
+      if (bootstrapLock.fields.length !== 1 || bootstrapLock.fields[0]?.name !== 'lockKey')
+        errors.push('BootstrapLock must contain exactly one lockKey field');
+      const lockKey = bootstrapLock.fields[0];
+      if (
+        lockKey?.baseType !== 'String' ||
+        !lockKey.attrs.includes('@id') ||
+        !lockKey.attrs.includes('@map("lock_key")') ||
+        !lockKey.attrs.includes('@db.VarChar(64)')
+      )
+        errors.push('BootstrapLock.lockKey contract mismatch');
+      if (bootstrapLock.uniques.length !== 0 || bootstrapLock.indexes.length !== 0)
+        errors.push('BootstrapLock must not add secondary uniques or indexes');
+    }
 
     const expectedPhysical = [...expected.models.values()]
       .filter((entry) => entry)
@@ -618,5 +641,5 @@ if (errors.length) {
 }
 
 console.log(
-  `PASS: contract + ${selfTests.count} self-tests (21 models, 202 physical fields, 92 relations, 22 deletions, 8 composite uniques, 46 foreign keys, 6 Restrict updates, 40 Cascade updates, 17 enums)`,
+  `PASS: contract + ${selfTests.count} self-tests (${EXPECTED_MODEL_COUNT} models, ${EXPECTED_PHYSICAL_FIELDS} physical fields, ${EXPECTED_RELATION_FIELDS} relations, ${EXPECTED_DELETED_FIELDS} deletions, ${EXPECTED_FROZEN_COMPOSITE_UNIQUES} composite uniques, ${EXPECTED_FOREIGN_KEYS} foreign keys, 6 Restrict updates, 41 Cascade updates, ${EXPECTED_ENUMS} enums)`,
 );

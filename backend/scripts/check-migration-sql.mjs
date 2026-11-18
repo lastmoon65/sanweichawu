@@ -7,14 +7,16 @@ const migrationsDir = join(projectRoot, 'prisma', 'migrations');
 const schemaPath = join(projectRoot, 'prisma', 'schema.prisma');
 const initialDir = '20261114120000_initial_schema';
 const constraintsDir = '20261114120100_domain_constraints';
+const credentialsDir = '20261117120000_staff_credentials';
+const bootstrapLockDir = '20261117173000_bootstrap_owner_lock';
 
-const EXPECTED_TABLES = 21;
-const EXPECTED_COLUMNS = 202;
-const EXPECTED_FOREIGN_KEYS = 46;
-const EXPECTED_UNIQUE_INDEXES = 21;
+const EXPECTED_TABLES = 22;
+const EXPECTED_COLUMNS = 210;
+const EXPECTED_FOREIGN_KEYS = 47;
+const EXPECTED_UNIQUE_INDEXES = 23;
 const EXPECTED_INDEXES = 24;
 const EXPECTED_CHECK_COUNT = 22;
-const EXPECTED_SELF_TESTS = 18;
+const EXPECTED_SELF_TESTS = 22;
 
 const EXPECTED_CHECKS = {
   chk_stores_business_day_cutoff_minute: {
@@ -356,7 +358,9 @@ function parseInitialSql(sql, schemaInfo) {
   }
 
   const expectedTables = new Map(
-    [...schemaInfo.models.values()].map((model) => [model.table, model]),
+    [...schemaInfo.models.values()]
+      .filter((model) => model.table !== 'bootstrap_locks')
+      .map((model) => [model.table, model]),
   );
   for (const [table, model] of expectedTables) {
     const columns = tables.get(table);
@@ -665,11 +669,66 @@ function expectedFinalForeignKeys(schemaInfo) {
   return expected;
 }
 
-function validateMigrationSql(schemaText, initialSql, constraintSql) {
+function validateBootstrapLockSql(sql) {
+  const errors = [];
+  const clean = stripComments(sql).trim();
+  const statements = clean
+    .split(';')
+    .map((statement) => statement.trim())
+    .filter(Boolean);
+  if (statements.length !== 2) {
+    errors.push(`bootstrap lock migration statement count ${statements.length} != 2`);
+  }
+
+  const create = statements[0]?.match(
+    /^CREATE TABLE `([^`]+)` \(([\s\S]*)\) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci$/,
+  );
+  if (!create) {
+    errors.push('bootstrap lock migration must create an InnoDB table');
+  } else {
+    if (create[1] !== 'bootstrap_locks') errors.push(`bootstrap lock table ${create[1]}`);
+    const body = create[2];
+    const columns = body
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith('`'));
+    if (columns.length !== 1 || columns[0] !== '`lock_key` VARCHAR(64) NOT NULL,') {
+      errors.push('bootstrap lock table must contain only lock_key VARCHAR(64) NOT NULL');
+    }
+    if (!/PRIMARY KEY \(`lock_key`\)/.test(body)) {
+      errors.push('bootstrap lock table primary key mismatch');
+    }
+  }
+
+  const insert = statements[1];
+  if (
+    insert !==
+    "INSERT INTO `bootstrap_locks` (`lock_key`) VALUES ('first_owner_bootstrap_v1')"
+  ) {
+    errors.push('bootstrap lock migration must seed exactly one fixed lock row');
+  }
+  if (
+    /\b(?:UPDATE|DELETE|DROP|ALTER|TRUNCATE|CREATE\s+TRIGGER)\b/i.test(clean) ||
+    (clean.match(/\bINSERT\s+INTO\b/gi) ?? []).length !== 1
+  ) {
+    errors.push('bootstrap lock migration contains an unexpected operation');
+  }
+
+  return { errors, lockRowCount: (clean.match(/\bINSERT\s+INTO\b/gi) ?? []).length };
+}
+
+function validateMigrationSql(
+  schemaText,
+  initialSql,
+  credentialsSql,
+  constraintSql,
+  bootstrapLockSql,
+) {
   const schemaInfo = parseSchema(schemaText);
-  const initial = parseInitialSql(initialSql, schemaInfo);
+  const initial = parseInitialSql(`${initialSql}\n${credentialsSql}`, schemaInfo);
   const constraints = parseConstraintSql(constraintSql);
-  const errors = [...initial.errors, ...constraints.errors];
+  const bootstrapLock = validateBootstrapLockSql(bootstrapLockSql);
+  const errors = [...initial.errors, ...constraints.errors, ...bootstrapLock.errors];
 
   const effectiveFks = new Map(initial.foreignKeys.map((entry) => [entry.name, { ...entry }]));
   for (const add of constraints.fkAdds) {
@@ -719,10 +778,11 @@ function validateMigrationSql(schemaText, initialSql, constraintSql) {
     errors,
     initial,
     constraints,
+    bootstrapLock,
     final: { foreignKeys: finalFks, restrictUpdates, cascadeUpdates },
   };
 }
-function runSelfTests(schemaText, initialSql, constraintSql) {
+function runSelfTests(schemaText, initialSql, credentialsSql, constraintSql, bootstrapLockSql) {
   const cases = [
     {
       label: 'missing table',
@@ -867,14 +927,56 @@ function runSelfTests(schemaText, initialSql, constraintSql) {
       constraints: constraintSql.replace('CHECK (`amount_fen` > 0);', 'CHECK (`amount_fen` > 0;'),
       expected: /unbalanced parentheses/,
     },
+    {
+      label: 'credential password type drift',
+      initial: initialSql,
+      credentials: credentialsSql.replace('`password_hash` VARCHAR(255)', '`password_hash` TEXT'),
+      constraints: constraintSql,
+      expected: /type staff_credentials\.password_hash/,
+    },
+    {
+      label: 'missing bootstrap lock seed',
+      initial: initialSql,
+      credentials: credentialsSql,
+      constraints: constraintSql,
+      bootstrapLock: bootstrapLockSql.replace(
+        /INSERT INTO `bootstrap_locks`[\s\S]*?;/,
+        '',
+      ),
+      expected: /statement count|seed exactly one fixed lock row/,
+    },
+    {
+      label: 'bootstrap lock storage engine drift',
+      initial: initialSql,
+      credentials: credentialsSql,
+      constraints: constraintSql,
+      bootstrapLock: bootstrapLockSql.replace('ENGINE=InnoDB', 'ENGINE=MyISAM'),
+      expected: /must create an InnoDB table/,
+    },
+    {
+      label: 'second bootstrap lock row',
+      initial: initialSql,
+      credentials: credentialsSql,
+      constraints: constraintSql,
+      bootstrapLock: `${bootstrapLockSql}\nINSERT INTO \`bootstrap_locks\` (\`lock_key\`) VALUES ('second_row');\n`,
+      expected: /statement count|unexpected operation/,
+    },
   ].map((testCase) => ({
     ...testCase,
+    credentials: testCase.credentials ?? credentialsSql,
     constraints: testCase.constraints ?? constraintSql,
+    bootstrapLock: testCase.bootstrapLock ?? bootstrapLockSql,
   }));
 
   const failures = [];
   for (const testCase of cases) {
-    const errors = validateMigrationSql(schemaText, testCase.initial, testCase.constraints).errors;
+    const errors = validateMigrationSql(
+      schemaText,
+      testCase.initial,
+      testCase.credentials,
+      testCase.constraints,
+      testCase.bootstrapLock,
+    ).errors;
     if (errors.length === 0) {
       failures.push(`self-test did not reject: ${testCase.label}`);
       continue;
@@ -892,9 +994,19 @@ const schema = readFileSync(schemaPath, 'utf8');
 const lock = readFileSync(join(migrationsDir, 'migration_lock.toml'), 'utf8').trim();
 const initialSql = readFileSync(join(migrationsDir, initialDir, 'migration.sql'), 'utf8');
 const constraintSql = readFileSync(join(migrationsDir, constraintsDir, 'migration.sql'), 'utf8');
+const credentialsSql = readFileSync(join(migrationsDir, credentialsDir, 'migration.sql'), 'utf8');
+const bootstrapLockSql = readFileSync(
+  join(migrationsDir, bootstrapLockDir, 'migration.sql'),
+  'utf8',
+);
 const errors = [];
 
-const expectedDirectories = [initialDir, constraintsDir].sort();
+const expectedDirectories = [
+  initialDir,
+  constraintsDir,
+  credentialsDir,
+  bootstrapLockDir,
+].sort();
 const actualDirectories = readdirSync(migrationsDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name)
@@ -904,9 +1016,21 @@ if (JSON.stringify(actualDirectories) !== JSON.stringify(expectedDirectories)) {
 }
 if (lock !== 'provider = "mysql"') errors.push(`migration lock mismatch: ${lock}`);
 
-const result = validateMigrationSql(schema, initialSql, constraintSql);
+const result = validateMigrationSql(
+  schema,
+  initialSql,
+  credentialsSql,
+  constraintSql,
+  bootstrapLockSql,
+);
 errors.push(...result.errors);
-const selfTests = runSelfTests(schema, initialSql, constraintSql);
+const selfTests = runSelfTests(
+  schema,
+  initialSql,
+  credentialsSql,
+  constraintSql,
+  bootstrapLockSql,
+);
 errors.push(...selfTests.failures);
 if (selfTests.count !== EXPECTED_SELF_TESTS) {
   errors.push(`self-test count ${selfTests.count} != ${EXPECTED_SELF_TESTS}`);
@@ -919,5 +1043,5 @@ if (errors.length) {
 }
 
 console.log(
-  `PASS: migration SQL contract + ${selfTests.count} self-tests (${result.initial.tables.size} tables, ${result.initial.columns} columns, ${result.initial.uniqueIndexes.length} unique indexes, ${result.initial.indexes.length} ordinary indexes, ${result.initial.foreignKeys.length} initial foreign keys, ${result.constraints.fkDrops.length} FK drops, ${result.constraints.fkAdds.length} FK adds, ${result.final.restrictUpdates} Restrict updates, ${result.final.cascadeUpdates} Cascade updates, ${result.constraints.constraints.length} checks)`,
+  `PASS: migration SQL contract + ${selfTests.count} self-tests (${result.initial.tables.size} tables, ${result.initial.columns} columns, ${result.initial.uniqueIndexes.length} unique indexes, ${result.initial.indexes.length} ordinary indexes, ${result.initial.foreignKeys.length} initial foreign keys, ${result.constraints.fkDrops.length} FK drops, ${result.constraints.fkAdds.length} FK adds, ${result.final.restrictUpdates} Restrict updates, ${result.final.cascadeUpdates} Cascade updates, ${result.constraints.constraints.length} checks, ${result.bootstrapLock.lockRowCount} bootstrap lock row insert)`,
 );

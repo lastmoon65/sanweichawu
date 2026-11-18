@@ -153,8 +153,29 @@ model Staff {
   refunds        RefundRecord[]  @relation("RefundOperator")
   voidedRefunds  RefundRecord[]  @relation("RefundVoidOperator")
   closedSessions DiningSession[] @relation("SessionCloser")
+  credential     StaffCredential?
 
   @@map("staff")
+}
+
+model StaffCredential {
+  id             BigInt    @id @default(autoincrement()) @map("id")
+  staffId        BigInt    @unique @map("staff_id")
+  username       String    @unique @map("username") @db.VarChar(80)
+  passwordHash   String    @map("password_hash") @db.VarChar(255)
+  failedAttempts Int       @default(0) @map("failed_attempts")
+  lockedUntil    DateTime? @map("locked_until") @db.DateTime(3)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+  staff          Staff     @relation(fields: [staffId], references: [id], onDelete: Restrict)
+
+  @@map("staff_credentials")
+}
+
+model BootstrapLock {
+  lockKey String @id @map("lock_key") @db.VarChar(64)
+
+  @@map("bootstrap_locks")
 }
 
 model Category {

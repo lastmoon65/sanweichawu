@@ -1,19 +1,19 @@
 # P1-02-A 完整字段契约
 
-编制日期：2026-11-14（Asia/Shanghai）
+编制日期：2026-11-14（Asia/Shanghai）；P1-04 增量修订：2026-11-17
 
 决策基线：`docs/engineering/phase-1/p1-02-a-business-decisions.md`
 
 Schema 快照：提交 `17b30ea`；SHA-256 `d38dae5442f64f49c1f4faaf869a85908e8ef2e4e008eb91b87e5ff4caafc44b`
 
-契约版本：**v1.3（候选属性收口）**
+契约版本：**v1.4（P1-04 员工凭据增量）**
 
-契约状态：**待最终验收**。本文件依据 A1-A9、T1-T11、R1-R5 及本轮候选属性收口结果编制，不修改当前 Schema。
+契约状态：**待最终验收**。本文件依据 A1-A9、T1-T11、R1-R5 及本轮候选属性收口结果编制；P1-04 的 StaffCredential 增量已同步到当前 Schema 与迁移。
 
 ## 1. 契约范围与状态标记
 
-- 当前 Schema：21 个模型、224 个物理字段、92 个 Prisma 关系字段、46 个带 `fields:` 的外键关系。
-- 目标：保留 202 个物理字段，删除 22 个物理字段。
+- 当前 Schema：22 个模型、232 个物理字段、94 个 Prisma 关系字段、47 个带 `fields:` 的外键关系。
+- 目标：保留 210 个物理字段，删除 22 个物理字段。
 - “已冻结”表示由 A/T 决策直接确定。
 - 本版已完成字符串长度、默认值、业务事件时间、普通索引、枚举和可空性收口，不再保留未决候选属性。
 - 删除字段的目标 Prisma 类型、MySQL 类型和列名均记为 `—`，不得进入目标 Schema。
@@ -28,12 +28,13 @@ Schema 快照：提交 `17b30ea`；SHA-256 `d38dae5442f64f49c1f4faaf869a85908e8e
 | R3 | 补齐六类库存流水的 `quantityDelta` / `reservedDelta` 方向及余额约束 | StockMovement 字段表、第 7.3 节、ACC-LEDGER-SIGN |
 | R4 | 补齐独立损耗与关联库存流水的门店、原料、数量、单位成本和总成本一致性 | LossRecord 字段表、第 7.5 节、ACC-LOSS-MATCH |
 | R5 | 明确 Decimal 运算、ROUND_HALF_UP 落库点和复算边界 | 成本字段表、第 7.8 节、ACC-ROUND |
+| R6 | P1-04 新增员工用户名密码凭据，仅保存安全密码哈希、失败次数和锁定时间 | StaffCredential 字段表、唯一约束、外键 |
 
 ## 2. 全局规范
 
 ### T1 主键与 API
 
-所有 21 个模型使用 `BigInt @id @default(autoincrement())`。API 中所有 BigInt 标识使用十进制字符串，禁止转为 JS Number；业务服务内部使用 BigInt。
+所有 22 个模型使用 `BigInt @id @default(autoincrement())`。API 中所有 BigInt 标识使用十进制字符串，禁止转为 JS Number；业务服务内部使用 BigInt。
 
 ### T2 时间
 
@@ -95,7 +96,8 @@ Prisma 模型 PascalCase、字段 camelCase；MySQL 表名和列名 snake_case�
 | --- | --- | ---: | ---: |
 | `Store` | `stores` | 11 | 10 |
 | `User` | `users` | 8 | 1 |
-| `Staff` | `staff` | 7 | 8 |
+| `Staff` | `staff` | 7 | 9 |
+| `StaffCredential` | `staff_credentials` | 8 | 1 |
 | `Category` | `categories` | 8 | 2 |
 | `Product` | `products` | 11 | 4 |
 | `ProductVariant` | `product_variants` | 10 | 5 |
@@ -162,7 +164,7 @@ Prisma 模型 PascalCase、字段 camelCase；MySQL 表名和列名 snake_case�
 
 ### Staff
 
-数据库表名：`staff`。物理字段 7 个，Prisma 关系字段 8 个。
+数据库表名：`staff`。物理字段 7 个，Prisma 关系字段 9 个。
 
 目标唯一约束：无额外复合唯一约束。
 
@@ -175,6 +177,25 @@ Prisma 模型 PascalCase、字段 camelCase；MySQL 表名和列名 snake_case�
 | `name` | **保留** | `String` | VARCHAR(80) | NO | —（显式填写） | `name` | — | — | T3 + T10 | 员工姓名；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP |
 | `role` | **保留** | `StaffRole` | ENUM('OWNER', 'MANAGER', 'STAFF') | NO | —（显式填写） | `role` | — | — | T3 + T9 + T10 | 员工角色；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-ENUM |
 | `status` | **保留** | `StaffStatus` | ENUM('ACTIVE', 'DISABLED') | NO | —（显式填写） | `status` | — | — | T3 + T9 + T10 | 员工状态；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-ENUM |
+| `createdAt` | **保留** | `DateTime` | DATETIME(3) | NO | CURRENT_TIMESTAMP(3)（T2） | `created_at` | — | — | T3 + T2 + T10 | 创建时间；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP |
+| `updatedAt` | **保留** | `DateTime` | DATETIME(3) | NO | 无数据库默认；Prisma Client 维护（T2） | `updated_at` | — | — | T3 + T2 + T10 | 更新时间；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP |
+
+### StaffCredential
+
+数据库表名：`staff_credentials`。物理字段 8 个，Prisma 关系字段 1 个。
+
+目标唯一约束：`staffId`、`username`。
+
+目标普通索引：无。
+
+| 字段 | 结果 | Prisma 类型（目标） | MySQL 类型（目标） | 允许 NULL | 默认/生成 | @map 列名 | 主键/唯一/索引 | 外键目标 / 基数 / onDelete | 决策依据 | 业务说明 / 验收 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `id` | **保留** | `BigInt` | BIGINT | NO | AUTO_INCREMENT（T1） | `id` | PK | — | T3 + T1 + T10 | 内部主键；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-PK, ACC-API |
+| `staffId` | **保留** | `BigInt` | BIGINT | NO | —（显式填写） | `staff_id` | UQ(staffId) | -> staff.id; N:1; onDelete Restrict | T3 + T8 + T9 + T10 + R6 | 员工凭据唯一归属；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-UQ, ACC-FK |
+| `username` | **保留** | `String` | VARCHAR(80) | NO | —（显式填写） | `username` | UQ(username) | — | T3 + T9 + T10 + R6 | 员工登录用户名；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP, ACC-UQ |
+| `passwordHash` | **保留** | `String` | VARCHAR(255) | NO | —（显式填写） | `password_hash` | — | — | T3 + T10 + R6 | 安全密码哈希，禁止保存明文；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP |
+| `failedAttempts` | **保留** | `Int` | INT | NO | 0（最终） | `failed_attempts` | — | — | T3 + T9 + T10 + R6 | 连续登录失败次数；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP |
+| `lockedUntil` | **保留** | `DateTime?` | DATETIME(3) | YES（未锁定为空） | —（可空） | `locked_until` | — | — | T3 + T2 + T10 + R6 | 账户锁定截止时间；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP |
 | `createdAt` | **保留** | `DateTime` | DATETIME(3) | NO | CURRENT_TIMESTAMP(3)（T2） | `created_at` | — | — | T3 + T2 + T10 | 创建时间；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP |
 | `updatedAt` | **保留** | `DateTime` | DATETIME(3) | NO | 无数据库默认；Prisma Client 维护（T2） | `updated_at` | — | — | T3 + T2 + T10 | 更新时间；ACC-TYPE, ACC-NULL, ACC-DEFAULT, ACC-MAP |
 
@@ -604,6 +625,8 @@ Prisma 模型 PascalCase、字段 camelCase；MySQL 表名和列名 snake_case�
 - `VariantRecipe[variantId, materialId, role]`
 - `RecipeModifier[variantId, optionValueId, materialId, targetRole]`
 - `OrderItemMaterial[orderItemId, materialId, source]`
+- `StaffCredential.staffId`
+- `StaffCredential.username`
 
 `StockMovement.movementNo`、`LossRecord.lossNo` 已删除，不保留对应唯一约束。
 
@@ -616,6 +639,7 @@ Prisma 模型 PascalCase、字段 camelCase；MySQL 表名和列名 snake_case�
 | Store | 无 |
 | User | 无 |
 | Staff | 无 |
+| StaffCredential | 无 |
 | Category | 无 |
 | Product | `categoryId + status + sortOrder` |
 | ProductVariant | `productId + status + sortOrder` |
@@ -640,6 +664,7 @@ Prisma 模型 PascalCase、字段 camelCase；MySQL 表名和列名 snake_case�
 | 关系字段 | 外键列 | 目标 | 基数 | onDelete |
 | --- | --- | --- | --- | --- |
 | `Staff.store` | `store_id` | `stores.id` | 1 | Restrict |
+| `StaffCredential.staff` | `staff_id` | `staff.id` | 1 | Restrict |
 | `Category.store` | `store_id` | `stores.id` | 1 | Restrict |
 | `Product.store` | `store_id` | `stores.id` | 1 | Restrict |
 | `Product.category` | `category_id` | `categories.id` | 1 | Restrict |
@@ -692,7 +717,7 @@ Prisma 模型 PascalCase、字段 camelCase；MySQL 表名和列名 snake_case�
 2. 禁止新增 Cascade 或 SetNull。
 3. LossRecord 的订单、订单明细和库存流水关联均可空，但独立损耗必须填写 `stockMovementId`。
 4. PaymentRecord 的 `sessionId`、`orderId` 必须恰好一个非空。
-5. 员工操作人关系暂按当前可空关联保留，不推导员工认证结构。
+5. 员工操作人关系保持可空；员工认证由独立的 `StaffCredential` 承载。
 
 ## 7. 特殊业务规则
 
@@ -907,9 +932,9 @@ LossRecord.lossCostSnapshot >= 0
 
 | 字段范围 | 默认/生成值 | 字段数 | 业务或技术理由 |
 | --- | --- | ---: | --- |
-| 21 个模型主键 `id` | `AUTO_INCREMENT` | 21 | T1 内部主键；主键由数据库生成，不允许业务指定 |
-| 15 个 `createdAt` | `CURRENT_TIMESTAMP(3)` | 15 | T2 记录数据创建时间；统一毫秒精度且存 UTC |
-| 12 个 `updatedAt` | Prisma `@updatedAt` 维护，无数据库默认 | 12 | T2 记录最近一次应用层更新时间；原生 SQL 更新不由本白名单自动补值 |
+| 22 个模型主键 `id` | `AUTO_INCREMENT` | 22 | T1 内部主键；主键由数据库生成，不允许业务指定 |
+| 16 个 `createdAt` | `CURRENT_TIMESTAMP(3)` | 16 | T2 记录数据创建时间；统一毫秒精度且存 UTC |
+| 13 个 `updatedAt` | Prisma `@updatedAt` 维护，无数据库默认 | 13 | T2 记录最近一次应用层更新时间；原生 SQL 更新不由本白名单自动补值 |
 | `Category.sortOrder`、`Product.sortOrder`、`ProductVariant.sortOrder`、`VariantOptionGroup.sortOrder`、`VariantOptionValue.sortOrder` | `0` | 5 | 未主动排序时按 0 排序；不表示业务状态 |
 | `Store.timezone` | `"Asia/Shanghai"` | 1 | 单店首版默认运营时区；API 仍返回 UTC，展示时使用该时区 |
 | `Store.businessDayCutoffMinute` | `0` | 1 | 默认自然日切点即 00:00，适合首版无跨日营业配置场景 |
@@ -918,8 +943,9 @@ LossRecord.lossCostSnapshot >= 0
 | `Material.reserved` | `0` | 1 | 新建材料默认没有预占库存；预占必须写库存流水 |
 | `Material.averageCostPerUnit` | `0` | 1 | 尚未发生入库时没有可计算的移动平均成本 |
 | `Material.version`、`DiningSession.version`、`Order.version` | `1` | 3 | T4 乐观锁初始版本；每次成功更新递增 |
+| `StaffCredential.failedAttempts` | `0` | 1 | 新建员工凭据尚未发生登录失败 |
 
-合计白名单字段：**62 个**。字段表中任何非空默认/生成值，都必须能在本表找到对应行；其他字段默认值必须为空。
+合计白名单字段：**66 个**。字段表中任何非空默认/生成值，都必须能在本表找到对应行；其他字段默认值必须为空。
 
 ### 10.3 一致性规则
 
@@ -930,11 +956,11 @@ LossRecord.lossCostSnapshot >= 0
 - 当前不存在未决候选属性。若实施阶段需要改变上述任何值，必须先修订字段契约并重新审查。
 ## 11. 完整性声明
 
-- 21 个模型完整覆盖。
-- 当前 224 个物理字段逐项对应。
+- 22 个模型完整覆盖。
+- 当前 232 个物理字段逐项对应。
 - 22 个删除字段均被排除在目标 Schema 之外。
-- 202 个保留字段均进入契约。
+- 210 个保留字段均进入契约。
 - 8 组冻结唯一约束全部列出。
 - 所有带 `fields:` 的外键均列出目标、基数和 onDelete。
-- 未新增字段，未改变 A1-A9、T1-T11 的业务含义。
-- 本文件不修改 Schema、Migration、依赖、业务代码或检查脚本。
+- 除 P1-04 的 StaffCredential 外未新增字段，未改变 A1-A9、T1-T11 的业务含义。
+- 本文件仅记录契约，不包含迁移或业务实现。
