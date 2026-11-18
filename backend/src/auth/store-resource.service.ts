@@ -11,6 +11,23 @@ export interface StoreScopedStaffResource {
   readonly status: StaffStatus;
 }
 
+export interface StoreScopedDiningTableResource {
+  readonly tableId: bigint;
+  readonly storeId: bigint;
+  readonly name: string;
+  readonly code: string;
+}
+
+export function parseDecimalBigIntId(value: string | string[] | undefined): bigint | null {
+  const text = Array.isArray(value) ? value[0] : value;
+  if (!text || !/^[1-9]\d*$/.test(text)) {
+    return null;
+  }
+
+  const id = BigInt(text);
+  return BigInt.asIntN(64, id) === id ? id : null;
+}
+
 @Injectable()
 export class StoreResourceService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
@@ -39,6 +56,32 @@ export class StoreResourceService {
           name: staff.name,
           role: staff.role,
           status: staff.status,
+        }
+      : null;
+  }
+
+  async findDiningTableForAuthenticatedStore(
+    tableId: bigint,
+    authenticatedStoreId: bigint,
+  ): Promise<StoreScopedDiningTableResource | null> {
+    const table = await this.prisma.diningTable.findFirst({
+      where: {
+        id: tableId,
+        storeId: authenticatedStoreId,
+      },
+      select: {
+        id: true,
+        storeId: true,
+        name: true,
+        code: true,
+      },
+    });
+    return table
+      ? {
+          tableId: table.id,
+          storeId: table.storeId,
+          name: table.name,
+          code: table.code,
         }
       : null;
   }

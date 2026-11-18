@@ -20,6 +20,8 @@ const LOGIN_RESULT: StaffLoginResult = {
   staff: STAFF,
 };
 
+const EMPTY_TABLES = { items: [] };
+
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -86,13 +88,19 @@ describe('App staff authentication', () => {
   });
 
   it('logs in, trims the username, preserves the password, and restores with a Bearer token', async () => {
-    const fetchMock = stubFetch(successResponse(LOGIN_RESULT), successResponse(STAFF));
+    const fetchMock = stubFetch(
+      successResponse(LOGIN_RESULT),
+      successResponse(EMPTY_TABLES),
+      successResponse(STAFF),
+      successResponse(EMPTY_TABLES),
+    );
 
     render(<App />);
     fillLoginForm('  manager.lin  ', '  tea-password  ');
     submitLogin();
 
     expect(await screen.findByText(STAFF.name)).toBeInTheDocument();
+    expect(await screen.findByText('暂无桌位，请新建第一张桌位。')).toBeInTheDocument();
     expect(screen.getByText('店长')).toBeInTheDocument();
     expect(screen.getByText('MANAGER')).toBeInTheDocument();
     expect(screen.getByText(STAFF.username)).toBeInTheDocument();
@@ -113,9 +121,17 @@ describe('App staff authentication', () => {
     render(<App />);
 
     expect(await screen.findByText(STAFF.name)).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
 
-    const meCall = fetchMock.mock.calls[1];
+    const firstTablesCall = fetchMock.mock.calls[1];
+    expect(firstTablesCall).toBeDefined();
+    const [firstTablesUrl, firstTablesInit] = firstTablesCall as [string, RequestInit];
+    expect(firstTablesUrl).toBe('/api/v1/dining-tables');
+    expect(firstTablesInit).toEqual({
+      headers: { Authorization: 'Bearer fake-access-token' },
+    });
+
+    const meCall = fetchMock.mock.calls[2];
     expect(meCall).toBeDefined();
     const [meUrl, meInit] = meCall as [string, RequestInit];
     expect(meUrl).toBe('/api/v1/auth/staff/me');
@@ -207,17 +223,18 @@ describe('App staff authentication', () => {
 
   it('restores a valid session and logs out locally without a server request', async () => {
     sessionStorage.setItem(STAFF_SESSION_TOKEN_KEY, 'restored-fake-token');
-    const fetchMock = stubFetch(successResponse(STAFF));
+    const fetchMock = stubFetch(successResponse(STAFF), successResponse(EMPTY_TABLES));
 
     render(<App />);
 
     expect(await screen.findByText(STAFF.name)).toBeInTheDocument();
+    expect(await screen.findByText('暂无桌位，请新建第一张桌位。')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '退出登录' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '退出登录' }));
 
     expect(screen.getByLabelText('用户名')).toBeInTheDocument();
     expect(sessionStorage.getItem(STAFF_SESSION_TOKEN_KEY)).toBeNull();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

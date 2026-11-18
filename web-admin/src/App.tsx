@@ -15,6 +15,7 @@ import {
   loginStaff,
 } from './staff-auth';
 import type { Staff, StaffRole } from './staff-auth';
+import { DiningTablesPanel } from './DiningTablesPanel';
 
 type AuthStatus = 'checking' | 'signed-out' | 'signed-in';
 
@@ -153,6 +154,16 @@ export function App() {
     setAuthStatus('signed-out');
   };
 
+  const handleSessionExpired = () => {
+    sessionStorage.removeItem(STAFF_SESSION_TOKEN_KEY);
+    setStaff(null);
+    setUsername('');
+    setPassword('');
+    setFieldErrors({});
+    setFormError(SESSION_EXPIRED_MESSAGE);
+    setAuthStatus('signed-out');
+  };
+
   if (authStatus === 'checking') {
     return (
       <main className="app-shell app-shell--checking">
@@ -193,6 +204,11 @@ export function App() {
             退出登录
           </button>
         </section>
+
+        <DiningTablesPanel
+          accessToken={sessionStorage.getItem(STAFF_SESSION_TOKEN_KEY) ?? ''}
+          onSessionExpired={handleSessionExpired}
+        />
       </main>
     );
   }

@@ -13,7 +13,7 @@
     "start:dev": "tsx watch src/main.ts",
     "test": "vitest run --config vitest.config.ts",
     "test:unit": "vitest run --config vitest.config.ts --exclude '**/*.database*.spec.ts'",
-    "test:database": "vitest run --config vitest.config.ts --no-file-parallelism test/auth.database.spec.ts test/auth.database.concurrency.spec.ts test/bootstrap-owner.database.spec.ts test/resource-ownership.database.spec.ts",
+    "test:database": "vitest run --config vitest.config.ts --no-file-parallelism test/auth.database.spec.ts test/auth.database.concurrency.spec.ts test/bootstrap-owner.database.spec.ts test/resource-ownership.database.spec.ts test/dining-tables.database.spec.ts",
     "test:bootstrap-startup": "node scripts/build.mjs && tsx test/support/bootstrap-startup.process.ts",
     "prisma:format": "prisma format --schema prisma/schema.prisma",
     "prisma:validate": "prisma validate --schema prisma/schema.prisma",

@@ -3,17 +3,7 @@ import type { CanActivate, ExecutionContext } from '@nestjs/common';
 
 import { authenticationRequired, insufficientPermissions } from '../auth-errors.js';
 import type { AuthenticatedRequest } from '../auth-context.js';
-import { StoreResourceService } from '../store-resource.service.js';
-
-function parseStaffId(value: string | string[] | undefined): bigint | null {
-  const text = Array.isArray(value) ? value[0] : value;
-  if (!text || !/^[1-9]\d*$/.test(text)) {
-    return null;
-  }
-
-  const staffId = BigInt(text);
-  return BigInt.asIntN(64, staffId) === staffId ? staffId : null;
-}
+import { StoreResourceService, parseDecimalBigIntId } from '../store-resource.service.js';
 
 @Injectable()
 export class StoreResourceOwnershipGuard implements CanActivate {
@@ -25,7 +15,29 @@ export class StoreResourceOwnershipGuard implements CanActivate {
       throw authenticationRequired();
     }
 
-    const staffId = parseStaffId(request.params?.staffId);
+    const tableId = parseDecimalBigIntId(request.params?.tableId);
+    if (request.params?.tableId !== undefined) {
+      if (tableId === null) {
+        throw insufficientPermissions();
+      }
+
+      const table = await this.resources.findDiningTableForAuthenticatedStore(
+        tableId,
+        request.staffAuth.storeId,
+      );
+      if (!table) {
+        throw insufficientPermissions();
+      }
+
+      request.storeTableResource = table;
+      return true;
+    }
+
+    const staffId = parseDecimalBigIntId(request.params?.staffId);
+    if (request.params?.staffId === undefined) {
+      return true;
+    }
+
     if (staffId === null) {
       throw insufficientPermissions();
     }
