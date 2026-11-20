@@ -44,12 +44,36 @@ function errorResponse(code: string, status: number): Response {
 }
 
 function stubFetch(...responses: Response[]) {
-  const fetchMock = vi.fn<typeof fetch>();
-  for (const response of responses) {
-    fetchMock.mockResolvedValueOnce(response);
-  }
+  const queued = [...responses];
+  const fetchMock = vi.fn<typeof fetch>(async (input) => {
+    const url =
+      typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    if (url.endsWith('/categories')) {
+      return successResponse({ items: [] });
+    }
+    if (url.includes('/products')) {
+      return successResponse({ items: [] });
+    }
+    const response = queued.shift();
+    if (!response) {
+      throw new Error(`Unexpected fetch: ${url}`);
+    }
+    return response;
+  });
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;
+}
+
+function findCall(fetchMock: ReturnType<typeof stubFetch>, url: string, method = 'GET') {
+  const call = fetchMock.mock.calls.find(
+    ([input, init]) =>
+      (typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url) ===
+        url && ((init as RequestInit | undefined)?.method ?? 'GET') === method,
+  );
+  if (!call) {
+    throw new Error(`Missing ${method} ${url}`);
+  }
+  return call;
 }
 
 function fillLoginForm(username: string, password: string) {
@@ -106,9 +130,10 @@ describe('App staff authentication', () => {
     expect(screen.getByText(STAFF.username)).toBeInTheDocument();
     expect(sessionStorage.getItem(STAFF_SESSION_TOKEN_KEY)).toBe('fake-access-token');
 
-    const loginCall = fetchMock.mock.calls[0];
-    expect(loginCall).toBeDefined();
-    const [loginUrl, loginInit] = loginCall as [string, RequestInit];
+    const [loginUrl, loginInit] = findCall(fetchMock, '/api/v1/auth/staff/login', 'POST') as [
+      string,
+      RequestInit,
+    ];
     expect(loginUrl).toBe('/api/v1/auth/staff/login');
     expect(loginInit.method).toBe('POST');
     expect(loginInit.headers).toEqual({ 'Content-Type': 'application/json' });
@@ -121,19 +146,18 @@ describe('App staff authentication', () => {
     render(<App />);
 
     expect(await screen.findByText(STAFF.name)).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(4);
+    expect(fetchMock).toHaveBeenCalledTimes(8);
 
-    const firstTablesCall = fetchMock.mock.calls[1];
-    expect(firstTablesCall).toBeDefined();
-    const [firstTablesUrl, firstTablesInit] = firstTablesCall as [string, RequestInit];
+    const [firstTablesUrl, firstTablesInit] = findCall(fetchMock, '/api/v1/dining-tables') as [
+      string,
+      RequestInit,
+    ];
     expect(firstTablesUrl).toBe('/api/v1/dining-tables');
     expect(firstTablesInit).toEqual({
       headers: { Authorization: 'Bearer fake-access-token' },
     });
 
-    const meCall = fetchMock.mock.calls[2];
-    expect(meCall).toBeDefined();
-    const [meUrl, meInit] = meCall as [string, RequestInit];
+    const [meUrl, meInit] = findCall(fetchMock, '/api/v1/auth/staff/me') as [string, RequestInit];
     expect(meUrl).toBe('/api/v1/auth/staff/me');
     expect(meInit).toEqual({
       headers: { Authorization: 'Bearer fake-access-token' },
@@ -212,9 +236,7 @@ describe('App staff authentication', () => {
     expect(await screen.findByLabelText('用户名')).toBeInTheDocument();
     expect(sessionStorage.getItem(STAFF_SESSION_TOKEN_KEY)).toBeNull();
 
-    const meCall = fetchMock.mock.calls[0];
-    expect(meCall).toBeDefined();
-    const [meUrl, meInit] = meCall as [string, RequestInit];
+    const [meUrl, meInit] = findCall(fetchMock, '/api/v1/auth/staff/me') as [string, RequestInit];
     expect(meUrl).toBe('/api/v1/auth/staff/me');
     expect(meInit).toEqual({
       headers: { Authorization: 'Bearer expired-fake-token' },
@@ -235,6 +257,6 @@ describe('App staff authentication', () => {
 
     expect(screen.getByLabelText('用户名')).toBeInTheDocument();
     expect(sessionStorage.getItem(STAFF_SESSION_TOKEN_KEY)).toBeNull();
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 });

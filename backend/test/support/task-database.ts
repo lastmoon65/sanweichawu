@@ -1,4 +1,4 @@
-export const TASK_TEST_DATABASE_NAME = 'sw007_dining_tables_20261118t0212z_test';
+export const TASK_TEST_DATABASE_NAME = 'sw003_product_menu_20261119t0139z_test';
 export const TASK_MYSQL_HOST = '127.0.0.1';
 export const TASK_MYSQL_PORT = '13306';
 

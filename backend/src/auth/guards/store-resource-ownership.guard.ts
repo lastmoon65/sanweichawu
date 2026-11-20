@@ -15,8 +15,10 @@ export class StoreResourceOwnershipGuard implements CanActivate {
       throw authenticationRequired();
     }
 
-    const tableId = parseDecimalBigIntId(request.params?.tableId);
-    if (request.params?.tableId !== undefined) {
+    const params = request.params ?? {};
+
+    const tableId = parseDecimalBigIntId(params.tableId);
+    if (params.tableId !== undefined) {
       if (tableId === null) {
         throw insufficientPermissions();
       }
@@ -33,24 +35,84 @@ export class StoreResourceOwnershipGuard implements CanActivate {
       return true;
     }
 
-    const staffId = parseDecimalBigIntId(request.params?.staffId);
-    if (request.params?.staffId === undefined) {
+    const staffId = parseDecimalBigIntId(params.staffId);
+    if (params.staffId !== undefined) {
+      if (staffId === null) {
+        throw insufficientPermissions();
+      }
+
+      const resource = await this.resources.findStaffForAuthenticatedStore(
+        staffId,
+        request.staffAuth.storeId,
+      );
+      if (!resource) {
+        throw insufficientPermissions();
+      }
+
+      request.storeResource = resource;
       return true;
     }
 
-    if (staffId === null) {
+    const categoryId = parseDecimalBigIntId(params.categoryId);
+    if (params.categoryId !== undefined) {
+      if (categoryId === null) {
+        throw insufficientPermissions();
+      }
+
+      const category = await this.resources.findCategoryForAuthenticatedStore(
+        categoryId,
+        request.staffAuth.storeId,
+      );
+      if (!category) {
+        throw insufficientPermissions();
+      }
+
+      request.storeCategoryResource = category;
+      return true;
+    }
+
+    const productId = parseDecimalBigIntId(params.productId);
+    if (params.productId !== undefined) {
+      if (productId === null) {
+        throw insufficientPermissions();
+      }
+
+      const product = await this.resources.findProductForAuthenticatedStore(
+        productId,
+        request.staffAuth.storeId,
+      );
+      if (!product) {
+        throw insufficientPermissions();
+      }
+
+      request.storeProductResource = product;
+      if (params.variantId === undefined) {
+        return true;
+      }
+    }
+
+    if (params.variantId === undefined) {
+      return true;
+    }
+
+    if (productId === null) {
+      throw insufficientPermissions();
+    }
+    const variantId = parseDecimalBigIntId(params.variantId);
+    if (variantId === null) {
       throw insufficientPermissions();
     }
 
-    const resource = await this.resources.findStaffForAuthenticatedStore(
-      staffId,
+    const variant = await this.resources.findVariantForAuthenticatedStore(
+      variantId,
+      productId,
       request.staffAuth.storeId,
     );
-    if (!resource) {
+    if (!variant) {
       throw insufficientPermissions();
     }
 
-    request.storeResource = resource;
+    request.storeVariantResource = variant;
     return true;
   }
 }

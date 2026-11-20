@@ -18,6 +18,30 @@ export interface StoreScopedDiningTableResource {
   readonly code: string;
 }
 
+export interface StoreScopedCategoryResource {
+  readonly categoryId: bigint;
+  readonly storeId: bigint;
+  readonly name: string;
+  readonly sortOrder: number;
+  readonly status: 'ACTIVE' | 'DISABLED';
+}
+
+export interface StoreScopedProductResource {
+  readonly productId: bigint;
+  readonly storeId: bigint;
+  readonly categoryId: bigint;
+  readonly name: string;
+}
+
+export interface StoreScopedVariantResource {
+  readonly variantId: bigint;
+  readonly productId: bigint;
+  readonly storeId: bigint;
+  readonly name: string;
+  readonly priceFen: bigint;
+  readonly status: 'ACTIVE' | 'DISABLED';
+}
+
 export function parseDecimalBigIntId(value: string | string[] | undefined): bigint | null {
   const text = Array.isArray(value) ? value[0] : value;
   if (!text || !/^[1-9]\d*$/.test(text)) {
@@ -82,6 +106,92 @@ export class StoreResourceService {
           storeId: table.storeId,
           name: table.name,
           code: table.code,
+        }
+      : null;
+  }
+
+  async findCategoryForAuthenticatedStore(
+    categoryId: bigint,
+    authenticatedStoreId: bigint,
+  ): Promise<StoreScopedCategoryResource | null> {
+    const category = await this.prisma.category.findFirst({
+      where: {
+        id: categoryId,
+        storeId: authenticatedStoreId,
+      },
+      select: {
+        id: true,
+        storeId: true,
+        name: true,
+        sortOrder: true,
+        status: true,
+      },
+    });
+    return category
+      ? {
+          categoryId: category.id,
+          storeId: category.storeId,
+          name: category.name,
+          sortOrder: category.sortOrder,
+          status: category.status,
+        }
+      : null;
+  }
+
+  async findProductForAuthenticatedStore(
+    productId: bigint,
+    authenticatedStoreId: bigint,
+  ): Promise<StoreScopedProductResource | null> {
+    const product = await this.prisma.product.findFirst({
+      where: {
+        id: productId,
+        storeId: authenticatedStoreId,
+      },
+      select: {
+        id: true,
+        storeId: true,
+        categoryId: true,
+        name: true,
+      },
+    });
+    return product
+      ? {
+          productId: product.id,
+          storeId: product.storeId,
+          categoryId: product.categoryId,
+          name: product.name,
+        }
+      : null;
+  }
+
+  async findVariantForAuthenticatedStore(
+    variantId: bigint,
+    productId: bigint,
+    authenticatedStoreId: bigint,
+  ): Promise<StoreScopedVariantResource | null> {
+    const variant = await this.prisma.productVariant.findFirst({
+      where: {
+        id: variantId,
+        productId,
+        product: { storeId: authenticatedStoreId },
+      },
+      select: {
+        id: true,
+        productId: true,
+        name: true,
+        priceFen: true,
+        status: true,
+        product: { select: { storeId: true } },
+      },
+    });
+    return variant
+      ? {
+          variantId: variant.id,
+          productId: variant.productId,
+          storeId: variant.product.storeId,
+          name: variant.name,
+          priceFen: variant.priceFen,
+          status: variant.status,
         }
       : null;
   }

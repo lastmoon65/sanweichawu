@@ -39,6 +39,45 @@ class StoreResourceTestController {
         }
       : null;
   }
+
+  @Get('store-category/:categoryId')
+  @UseGuards(StaffJwtAuthGuard, StoreResourceOwnershipGuard)
+  storeCategory(@Req() request: AuthenticatedRequest) {
+    const resource = request.storeCategoryResource;
+    return resource
+      ? {
+          categoryId: resource.categoryId.toString(),
+          storeId: resource.storeId.toString(),
+          name: resource.name,
+        }
+      : null;
+  }
+
+  @Get('store-product/:productId')
+  @UseGuards(StaffJwtAuthGuard, StoreResourceOwnershipGuard)
+  storeProduct(@Req() request: AuthenticatedRequest) {
+    const resource = request.storeProductResource;
+    return resource
+      ? {
+          productId: resource.productId.toString(),
+          storeId: resource.storeId.toString(),
+          categoryId: resource.categoryId.toString(),
+        }
+      : null;
+  }
+
+  @Get('store-product-variant/:productId/:variantId')
+  @UseGuards(StaffJwtAuthGuard, StoreResourceOwnershipGuard)
+  storeProductVariant(@Req() request: AuthenticatedRequest) {
+    const resource = request.storeVariantResource;
+    return resource
+      ? {
+          variantId: resource.variantId.toString(),
+          productId: resource.productId.toString(),
+          storeId: resource.storeId.toString(),
+        }
+      : null;
+  }
 }
 
 @Module({ imports: [AuthModule, PrismaModule], controllers: [StoreResourceTestController] })
@@ -83,6 +122,9 @@ describe('store-scoped resource ownership with a real database', () => {
       await prisma.staff.deleteMany({ where: { id: staffId } });
     }
     for (const storeId of createdStoreIds.splice(0)) {
+      await prisma.productVariant.deleteMany({ where: { product: { storeId } } });
+      await prisma.product.deleteMany({ where: { storeId } });
+      await prisma.category.deleteMany({ where: { storeId } });
       await prisma.store.deleteMany({ where: { id: storeId } });
     }
   });
@@ -158,5 +200,129 @@ describe('store-scoped resource ownership with a real database', () => {
     );
     expect(otherStore.status).toBe(403);
     expect((otherStore.body as ApiErrorBody).error.code).toBe('FORBIDDEN');
+  });
+
+  it('resolves category, product and variant resources through the authenticated store', async () => {
+    const actor = await createIdentity();
+    const foreign = await createIdentity();
+    const token = await login(actor);
+    const foreignToken = await login(foreign);
+
+    async function createCatalog(storeId: bigint, suffix: string) {
+      const category = await prisma.category.create({
+        data: { storeId, name: `ownership-category-${suffix}`, status: 'ACTIVE' },
+        select: { id: true },
+      });
+      const product = await prisma.product.create({
+        data: {
+          storeId,
+          categoryId: category.id,
+          name: `ownership-product-${suffix}`,
+          status: 'ACTIVE',
+        },
+        select: { id: true },
+      });
+      const variant = await prisma.productVariant.create({
+        data: {
+          productId: product.id,
+          name: `ownership-variant-${suffix}`,
+          priceFen: 100n,
+          inventoryMode: 'UNMANAGED',
+          status: 'ACTIVE',
+        },
+        select: { id: true },
+      });
+      return { categoryId: category.id, productId: product.id, variantId: variant.id };
+    }
+
+    const own = await createCatalog(actor.storeId, randomUUID());
+    const foreignCatalog = await createCatalog(foreign.storeId, randomUUID());
+    const otherOwnProduct = await prisma.product.create({
+      data: {
+        storeId: actor.storeId,
+        categoryId: own.categoryId,
+        name: `ownership-product-2-${randomUUID()}`,
+        status: 'ACTIVE',
+      },
+      select: { id: true },
+    });
+    const otherOwnVariant = await prisma.productVariant.create({
+      data: {
+        productId: otherOwnProduct.id,
+        name: `ownership-variant-2-${randomUUID()}`,
+        priceFen: 200n,
+        inventoryMode: 'UNMANAGED',
+        status: 'ACTIVE',
+      },
+      select: { id: true },
+    });
+
+    const ownCategory = await request(
+      'GET',
+      `/api/v1/test-support/store-category/${own.categoryId}`,
+      { headers: { authorization: `Bearer ${token}` } },
+    );
+    expect(ownCategory.status).toBe(200);
+    expect((ownCategory.body as ApiSuccessBody<Record<string, string>>).data).toMatchObject({
+      categoryId: own.categoryId.toString(),
+      storeId: actor.storeId.toString(),
+    });
+
+    const ownProduct = await request('GET', `/api/v1/test-support/store-product/${own.productId}`, {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(ownProduct.status).toBe(200);
+    expect((ownProduct.body as ApiSuccessBody<Record<string, string>>).data).toMatchObject({
+      productId: own.productId.toString(),
+      storeId: actor.storeId.toString(),
+    });
+
+    const ownVariant = await request(
+      'GET',
+      `/api/v1/test-support/store-product-variant/${own.productId}/${own.variantId}`,
+      { headers: { authorization: `Bearer ${token}` } },
+    );
+    expect(ownVariant.status).toBe(200);
+    expect((ownVariant.body as ApiSuccessBody<Record<string, string>>).data).toMatchObject({
+      variantId: own.variantId.toString(),
+      productId: own.productId.toString(),
+      storeId: actor.storeId.toString(),
+    });
+
+    const forbiddenResponses = [
+      await request('GET', `/api/v1/test-support/store-category/${foreignCatalog.categoryId}`, {
+        headers: { authorization: `Bearer ${token}` },
+      }),
+      await request('GET', `/api/v1/test-support/store-product/${foreignCatalog.productId}`, {
+        headers: { authorization: `Bearer ${token}` },
+      }),
+      await request(
+        'GET',
+        `/api/v1/test-support/store-product-variant/${foreignCatalog.productId}/${foreignCatalog.variantId}`,
+        { headers: { authorization: `Bearer ${token}` } },
+      ),
+      await request(
+        'GET',
+        `/api/v1/test-support/store-product-variant/${own.productId}/${otherOwnVariant.id}`,
+        { headers: { authorization: `Bearer ${token}` } },
+      ),
+      await request('GET', '/api/v1/test-support/store-category/not-a-number', {
+        headers: { authorization: `Bearer ${token}` },
+      }),
+      await request('GET', '/api/v1/test-support/store-product/0', {
+        headers: { authorization: `Bearer ${token}` },
+      }),
+    ];
+    for (const response of forbiddenResponses) {
+      expect(response.status).toBe(403);
+      expect((response.body as ApiErrorBody).error.code).toBe('FORBIDDEN');
+    }
+
+    const foreignOwnCategory = await request(
+      'GET',
+      `/api/v1/test-support/store-category/${foreignCatalog.categoryId}`,
+      { headers: { authorization: `Bearer ${foreignToken}` } },
+    );
+    expect(foreignOwnCategory.status).toBe(200);
   });
 });

@@ -45,12 +45,36 @@ function errorResponse(code: string, status: number): Response {
 }
 
 function stubFetch(...responses: Response[]) {
-  const fetchMock = vi.fn<typeof fetch>();
-  for (const response of responses) {
-    fetchMock.mockResolvedValueOnce(response);
-  }
+  const queued = [...responses];
+  const fetchMock = vi.fn<typeof fetch>(async (input) => {
+    const url =
+      typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    if (url.endsWith('/categories')) {
+      return successResponse({ items: [] });
+    }
+    if (url.includes('/products')) {
+      return successResponse({ items: [] });
+    }
+    const response = queued.shift();
+    if (!response) {
+      throw new Error(`Unexpected fetch: ${url}`);
+    }
+    return response;
+  });
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;
+}
+
+function findCall(fetchMock: ReturnType<typeof stubFetch>, path: string, method = 'GET') {
+  const call = fetchMock.mock.calls.find(
+    ([input, init]) =>
+      (typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url) ===
+        `/api/v1${path}` && ((init as RequestInit | undefined)?.method ?? 'GET') === method,
+  );
+  if (!call) {
+    throw new Error(`Missing ${method} ${path}`);
+  }
+  return call;
 }
 
 async function renderSignedIn(...tableResponses: Response[]) {
@@ -87,7 +111,7 @@ describe('dining table management for signed-in staff', () => {
     expect(screen.getByRole('heading', { name: '欢迎回来' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '退出登录' })).toBeInTheDocument();
 
-    const [tablesUrl, tablesInit] = fetchMock.mock.calls[1] as [string, RequestInit];
+    const [tablesUrl, tablesInit] = findCall(fetchMock, '/dining-tables') as [string, RequestInit];
     expect(tablesUrl).toBe('/api/v1/dining-tables');
     expect(tablesInit).toEqual({
       headers: { Authorization: 'Bearer dining-fake-token' },
@@ -115,7 +139,10 @@ describe('dining table management for signed-in staff', () => {
     expect(screen.getByLabelText('桌名')).toHaveValue('');
     expect(screen.getByLabelText('桌码')).toHaveValue('');
 
-    const [createUrl, createInit] = fetchMock.mock.calls[2] as [string, RequestInit];
+    const [createUrl, createInit] = findCall(fetchMock, '/dining-tables', 'POST') as [
+      string,
+      RequestInit,
+    ];
     expect(createUrl).toBe('/api/v1/dining-tables');
     expect(createInit.method).toBe('POST');
     expect(createInit.headers).toEqual({
@@ -137,7 +164,7 @@ describe('dining table management for signed-in staff', () => {
     fireEvent.click(screen.getByRole('button', { name: '新建桌位' }));
     expect(screen.getByText('桌名不能超过40个字符')).toBeInTheDocument();
     expect(screen.getByText('桌码不能超过40个字符')).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
   it('shows the code conflict message from a create response', async () => {
@@ -151,7 +178,7 @@ describe('dining table management for signed-in staff', () => {
     fireEvent.click(screen.getByRole('button', { name: '新建桌位' }));
 
     expect(await screen.findByText('该桌码已被使用')).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(5);
   });
 
   it('edits and deletes an existing table without converting its id to a number', async () => {
@@ -176,7 +203,11 @@ describe('dining table management for signed-in staff', () => {
 
     expect(await screen.findByText('新一号桌')).toBeInTheDocument();
     expect(screen.getByText('A02')).toBeInTheDocument();
-    const [updateUrl, updateInit] = fetchMock.mock.calls[2] as [string, RequestInit];
+    const [updateUrl, updateInit] = findCall(
+      fetchMock,
+      `/dining-tables/${TABLE_ONE.id}`,
+      'PATCH',
+    ) as [string, RequestInit];
     expect(updateUrl).toBe(`/api/v1/dining-tables/${TABLE_ONE.id}`);
     expect(updateInit.method).toBe('PATCH');
     expect(JSON.parse(String(updateInit.body))).toEqual({ name: '新一号桌', code: 'A02' });
@@ -185,7 +216,11 @@ describe('dining table management for signed-in staff', () => {
     expect(await screen.findByText('暂无桌位，请新建第一张桌位。')).toBeInTheDocument();
     expect(screen.queryByText('新一号桌')).not.toBeInTheDocument();
 
-    const [deleteUrl, deleteInit] = fetchMock.mock.calls[3] as [string, RequestInit];
+    const [deleteUrl, deleteInit] = findCall(
+      fetchMock,
+      `/dining-tables/${TABLE_ONE.id}`,
+      'DELETE',
+    ) as [string, RequestInit];
     expect(deleteUrl).toBe(`/api/v1/dining-tables/${TABLE_ONE.id}`);
     expect(deleteInit.method).toBe('DELETE');
   });

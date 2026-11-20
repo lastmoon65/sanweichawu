@@ -16,6 +16,7 @@ import {
 } from './staff-auth';
 import type { Staff, StaffRole } from './staff-auth';
 import { DiningTablesPanel } from './DiningTablesPanel';
+import { ProductMenuPanel } from './ProductMenuPanel';
 
 type AuthStatus = 'checking' | 'signed-out' | 'signed-in';
 
@@ -206,6 +207,11 @@ export function App() {
         </section>
 
         <DiningTablesPanel
+          accessToken={sessionStorage.getItem(STAFF_SESSION_TOKEN_KEY) ?? ''}
+          onSessionExpired={handleSessionExpired}
+        />
+
+        <ProductMenuPanel
           accessToken={sessionStorage.getItem(STAFF_SESSION_TOKEN_KEY) ?? ''}
           onSessionExpired={handleSessionExpired}
         />
