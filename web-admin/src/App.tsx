@@ -15,10 +15,12 @@ import {
   loginStaff,
 } from './staff-auth';
 import type { Staff, StaffRole } from './staff-auth';
+import { DiningSessionsPanel } from './DiningSessionsPanel';
 import { DiningTablesPanel } from './DiningTablesPanel';
 import { ProductMenuPanel } from './ProductMenuPanel';
 
 type AuthStatus = 'checking' | 'signed-out' | 'signed-in';
+type WorkspaceView = 'operations' | 'sessions';
 
 interface FieldErrors {
   username?: string;
@@ -51,6 +53,7 @@ export function App() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [view, setView] = useState<WorkspaceView>('operations');
 
   useEffect(() => {
     if (authStatus !== 'checking') {
@@ -148,6 +151,7 @@ export function App() {
   const handleLogout = () => {
     sessionStorage.removeItem(STAFF_SESSION_TOKEN_KEY);
     setStaff(null);
+    setView('operations');
     setUsername('');
     setPassword('');
     setFieldErrors({});
@@ -158,6 +162,7 @@ export function App() {
   const handleSessionExpired = () => {
     sessionStorage.removeItem(STAFF_SESSION_TOKEN_KEY);
     setStaff(null);
+    setView('operations');
     setUsername('');
     setPassword('');
     setFieldErrors({});
@@ -206,15 +211,43 @@ export function App() {
           </button>
         </section>
 
-        <DiningTablesPanel
-          accessToken={sessionStorage.getItem(STAFF_SESSION_TOKEN_KEY) ?? ''}
-          onSessionExpired={handleSessionExpired}
-        />
+        <nav className="view-switch" aria-label="功能视图">
+          <button
+            className="secondary-button"
+            type="button"
+            aria-pressed={view === 'operations'}
+            onClick={() => setView('operations')}
+          >
+            经营管理
+          </button>
+          <button
+            className="secondary-button"
+            type="button"
+            aria-pressed={view === 'sessions'}
+            onClick={() => setView('sessions')}
+          >
+            桌台
+          </button>
+        </nav>
 
-        <ProductMenuPanel
-          accessToken={sessionStorage.getItem(STAFF_SESSION_TOKEN_KEY) ?? ''}
-          onSessionExpired={handleSessionExpired}
-        />
+        {view === 'sessions' ? (
+          <DiningSessionsPanel
+            accessToken={sessionStorage.getItem(STAFF_SESSION_TOKEN_KEY) ?? ''}
+            onSessionExpired={handleSessionExpired}
+          />
+        ) : (
+          <>
+            <DiningTablesPanel
+              accessToken={sessionStorage.getItem(STAFF_SESSION_TOKEN_KEY) ?? ''}
+              onSessionExpired={handleSessionExpired}
+            />
+
+            <ProductMenuPanel
+              accessToken={sessionStorage.getItem(STAFF_SESSION_TOKEN_KEY) ?? ''}
+              onSessionExpired={handleSessionExpired}
+            />
+          </>
+        )}
       </main>
     );
   }

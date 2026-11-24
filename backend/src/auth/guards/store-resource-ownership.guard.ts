@@ -35,6 +35,24 @@ export class StoreResourceOwnershipGuard implements CanActivate {
       return true;
     }
 
+    const sessionId = parseDecimalBigIntId(params.sessionId);
+    if (params.sessionId !== undefined) {
+      if (sessionId === null) {
+        throw insufficientPermissions();
+      }
+
+      const session = await this.resources.findDiningSessionForAuthenticatedStore(
+        sessionId,
+        request.staffAuth.storeId,
+      );
+      if (!session) {
+        throw insufficientPermissions();
+      }
+
+      request.storeSessionResource = session;
+      return true;
+    }
+
     const staffId = parseDecimalBigIntId(params.staffId);
     if (params.staffId !== undefined) {
       if (staffId === null) {

@@ -2,6 +2,7 @@ import type { StaffRole } from '@prisma/client';
 
 import type {
   StoreScopedCategoryResource,
+  StoreScopedDiningSessionResource,
   StoreScopedDiningTableResource,
   StoreScopedProductResource,
   StoreScopedStaffResource,
@@ -22,6 +23,7 @@ export interface AuthenticatedRequest {
   staffAuth?: AuthenticatedStaff;
   storeResource?: StoreScopedStaffResource;
   storeTableResource?: StoreScopedDiningTableResource;
+  storeSessionResource?: StoreScopedDiningSessionResource;
   storeCategoryResource?: StoreScopedCategoryResource;
   storeProductResource?: StoreScopedProductResource;
   storeVariantResource?: StoreScopedVariantResource;

@@ -18,6 +18,13 @@ export interface StoreScopedDiningTableResource {
   readonly code: string;
 }
 
+export interface StoreScopedDiningSessionResource {
+  readonly sessionId: bigint;
+  readonly storeId: bigint;
+  readonly tableId: bigint;
+  readonly status: 'OPEN' | 'CLOSED';
+}
+
 export interface StoreScopedCategoryResource {
   readonly categoryId: bigint;
   readonly storeId: bigint;
@@ -106,6 +113,32 @@ export class StoreResourceService {
           storeId: table.storeId,
           name: table.name,
           code: table.code,
+        }
+      : null;
+  }
+
+  async findDiningSessionForAuthenticatedStore(
+    sessionId: bigint,
+    authenticatedStoreId: bigint,
+  ): Promise<StoreScopedDiningSessionResource | null> {
+    const session = await this.prisma.diningSession.findFirst({
+      where: {
+        id: sessionId,
+        storeId: authenticatedStoreId,
+      },
+      select: {
+        id: true,
+        storeId: true,
+        tableId: true,
+        status: true,
+      },
+    });
+    return session
+      ? {
+          sessionId: session.id,
+          storeId: session.storeId,
+          tableId: session.tableId,
+          status: session.status,
         }
       : null;
   }
