@@ -107,7 +107,7 @@ describe('dining table management for signed-in staff', () => {
 
     expect(await screen.findByText(TABLE_ONE.name)).toBeInTheDocument();
     expect(screen.getByText(TABLE_ONE.code)).toBeInTheDocument();
-    expect(screen.getByText(TABLE_ONE.updatedAt)).toBeInTheDocument();
+    expect(screen.getByText('2026-11-18 10:03')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '欢迎回来' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '退出登录' })).toBeInTheDocument();
 

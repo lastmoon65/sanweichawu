@@ -141,7 +141,7 @@ describe('dining session management for signed-in staff', () => {
     expect(screen.getByText(TABLE_ONE.name)).toBeInTheDocument();
     expect(screen.getByText(TABLE_TWO.name)).toBeInTheDocument();
     expect(screen.getByText('已开台')).toBeInTheDocument();
-    expect(screen.getByText(`开台时间：${OPEN_SESSION.openedAt}`)).toBeInTheDocument();
+    expect(screen.getByText('开台时间：2026-11-20 11:04')).toBeInTheDocument();
     expect(screen.getByText('空闲')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: `关台 ${TABLE_ONE.name}` })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: `开台 ${TABLE_TWO.name}` })).toBeInTheDocument();
@@ -161,7 +161,7 @@ describe('dining session management for signed-in staff', () => {
     fireEvent.click(screen.getByRole('button', { name: `开台 ${TABLE_ONE.name}` }));
 
     expect(await screen.findByText('已开台')).toBeInTheDocument();
-    expect(screen.getByText(`开台时间：${OPEN_SESSION.openedAt}`)).toBeInTheDocument();
+    expect(screen.getByText('开台时间：2026-11-20 11:04')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: `关台 ${TABLE_ONE.name}` })).toBeInTheDocument();
 
     const [openCall] = callsFor(

@@ -17,6 +17,7 @@ import {
   updateProduct,
   updateVariant,
 } from './product-menu';
+import { formatDateTime } from './format-time';
 import type { Category, MenuStatus, Product, ProductVariant } from './product-menu';
 import { NETWORK_ERROR_MESSAGE, NetworkError, UnauthorizedSessionError } from './staff-auth';
 
@@ -725,7 +726,7 @@ export function ProductMenuPanel({ accessToken, onSessionExpired }: ProductMenuP
                             {category.status === 'ACTIVE' ? '启用中' : '已停用'}
                           </span>
                         </td>
-                        <td className="table-time">{category.updatedAt}</td>
+                        <td className="table-time">{formatDateTime(category.updatedAt)}</td>
                         <td>
                           <div className="row-actions">
                             <button
@@ -892,7 +893,7 @@ export function ProductMenuPanel({ accessToken, onSessionExpired }: ProductMenuP
                     {product.description ? (
                       <p className="product-description">{product.description}</p>
                     ) : null}
-                    <p className="table-time">更新时间：{product.updatedAt}</p>
+                    <p className="table-time">更新时间：{formatDateTime(product.updatedAt)}</p>
                     <div className="row-actions">
                       <button
                         className="text-button"

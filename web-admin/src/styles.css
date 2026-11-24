@@ -277,6 +277,61 @@ h1 {
   gap: 8px;
 }
 
+.order-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 0 0 20px;
+}
+
+.order-filters .form-field {
+  min-width: 190px;
+}
+
+.order-session-id {
+  color: #637066;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.76rem;
+}
+
+.order-detail-list {
+  margin: 0;
+  padding-left: 18px;
+  color: #3d5045;
+  font-size: 0.82rem;
+}
+
+.order-cancel-form {
+  min-width: 220px;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgb(152 62 52 / 6%);
+}
+
+.order-cancel-form label {
+  display: block;
+  margin-bottom: 6px;
+  color: #6c3933;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.order-cancel-form input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid rgb(152 62 52 / 24%);
+  border-radius: 8px;
+  outline: none;
+  background: #fff;
+}
+
+.order-cancel-form input:focus {
+  border-color: #983e34;
+  box-shadow: 0 0 0 3px rgb(152 62 52 / 10%);
+}
+
 .text-button {
   padding: 5px 8px;
   border: 0;

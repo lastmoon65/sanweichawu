@@ -175,7 +175,12 @@ export class DiningSessionService {
         throw sessionVersionConflict(session.version);
       }
 
-      const orderCount = await transaction.order.count({ where: { sessionId } });
+      const orderCount = await transaction.order.count({
+        where: {
+          sessionId,
+          status: { notIn: ['COMPLETED', 'CANCELLED'] },
+        },
+      });
       if (orderCount > 0) {
         throw sessionHasOrders(orderCount);
       }

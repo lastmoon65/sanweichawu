@@ -53,6 +53,24 @@ export class StoreResourceOwnershipGuard implements CanActivate {
       return true;
     }
 
+    const orderId = parseDecimalBigIntId(params.orderId);
+    if (params.orderId !== undefined) {
+      if (orderId === null) {
+        throw insufficientPermissions();
+      }
+
+      const order = await this.resources.findOrderForAuthenticatedStore(
+        orderId,
+        request.staffAuth.storeId,
+      );
+      if (!order) {
+        throw insufficientPermissions();
+      }
+
+      request.storeOrderResource = order;
+      return true;
+    }
+
     const staffId = parseDecimalBigIntId(params.staffId);
     if (params.staffId !== undefined) {
       if (staffId === null) {

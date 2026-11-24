@@ -4,6 +4,7 @@ import type {
   StoreScopedCategoryResource,
   StoreScopedDiningSessionResource,
   StoreScopedDiningTableResource,
+  StoreScopedOrderResource,
   StoreScopedProductResource,
   StoreScopedStaffResource,
   StoreScopedVariantResource,
@@ -27,4 +28,5 @@ export interface AuthenticatedRequest {
   storeCategoryResource?: StoreScopedCategoryResource;
   storeProductResource?: StoreScopedProductResource;
   storeVariantResource?: StoreScopedVariantResource;
+  storeOrderResource?: StoreScopedOrderResource;
 }

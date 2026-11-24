@@ -10,6 +10,7 @@ import type {
   StoreResourceService,
   StoreScopedCategoryResource,
   StoreScopedDiningTableResource,
+  StoreScopedOrderResource,
   StoreScopedProductResource,
   StoreScopedStaffResource,
   StoreScopedVariantResource,
@@ -62,6 +63,10 @@ interface FakeResources {
     productId: bigint,
     storeId: bigint,
   ) => Promise<StoreScopedVariantResource | null>;
+  findOrderForAuthenticatedStore: (
+    orderId: bigint,
+    storeId: bigint,
+  ) => Promise<StoreScopedOrderResource | null>;
 }
 
 function createGuard(overrides: Partial<FakeResources> = {}) {
@@ -99,6 +104,12 @@ function createGuard(overrides: Partial<FakeResources> = {}) {
       name: '本店规格',
       priceFen: 100n,
       status: 'ACTIVE',
+    }),
+    findOrderForAuthenticatedStore: async (orderId, storeId) => ({
+      orderId,
+      storeId,
+      sessionId: 50n,
+      status: 'PENDING_ACCEPTANCE',
     }),
     ...overrides,
   };
@@ -195,6 +206,28 @@ describe('StoreResourceOwnershipGuard path resolution', () => {
       403,
       'FORBIDDEN',
     );
+  });
+
+  it('resolves order ids only for the authenticated store', async () => {
+    const guard = createGuard();
+    const order = context({ orderId: '600' });
+    await expect(guard.canActivate(order.executionContext)).resolves.toBe(true);
+    expect(order.request.storeOrderResource).toMatchObject({
+      orderId: 600n,
+      storeId: 10n,
+      status: 'PENDING_ACCEPTANCE',
+    });
+
+    const foreignGuard = createGuard({
+      findOrderForAuthenticatedStore: async () => null,
+    });
+    for (const params of [{ orderId: '999' }, { orderId: '0' }, { orderId: 'invalid' }]) {
+      await expectHttpError(
+        foreignGuard.canActivate(context(params).executionContext),
+        403,
+        'FORBIDDEN',
+      );
+    }
   });
 
   it('returns 403 for malformed, missing or foreign ids', async () => {

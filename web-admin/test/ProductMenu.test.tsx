@@ -179,14 +179,14 @@ describe('product menu management for signed-in staff', () => {
     const categories = within(categoryTable());
     expect(categories.getByText('热茶')).toBeInTheDocument();
     expect(categories.getByText('已停用')).toBeInTheDocument();
-    expect(categories.getByText(CATEGORY_HOT.updatedAt)).toBeInTheDocument();
+    expect(categories.getByText('2026-11-19 10:03')).toBeInTheDocument();
 
     const card = within(productCard('牛肉面'));
     expect(card.getByText('招牌汤面')).toBeInTheDocument();
     expect(card.getByText('¥12.50')).toBeInTheDocument();
     expect(card.getByText('（1250 分）')).toBeInTheDocument();
     expect(card.getByText('¥0.00')).toBeInTheDocument();
-    expect(card.getByText(`更新时间：${PRODUCT_NOODLE.updatedAt}`)).toBeInTheDocument();
+    expect(card.getByText('更新时间：2026-11-19 10:03')).toBeInTheDocument();
 
     expect(callsFor(fetchMock, 'GET', '/api/v1/categories')).toHaveLength(1);
     expect(callsFor(fetchMock, 'GET', '/api/v1/products')).toHaveLength(1);

@@ -49,6 +49,13 @@ export interface StoreScopedVariantResource {
   readonly status: 'ACTIVE' | 'DISABLED';
 }
 
+export interface StoreScopedOrderResource {
+  readonly orderId: bigint;
+  readonly storeId: bigint;
+  readonly sessionId: bigint | null;
+  readonly status: 'PENDING_ACCEPTANCE' | 'ACCEPTED' | 'PREPARING' | 'COMPLETED' | 'CANCELLED';
+}
+
 export function parseDecimalBigIntId(value: string | string[] | undefined): bigint | null {
   const text = Array.isArray(value) ? value[0] : value;
   if (!text || !/^[1-9]\d*$/.test(text)) {
@@ -225,6 +232,32 @@ export class StoreResourceService {
           name: variant.name,
           priceFen: variant.priceFen,
           status: variant.status,
+        }
+      : null;
+  }
+
+  async findOrderForAuthenticatedStore(
+    orderId: bigint,
+    authenticatedStoreId: bigint,
+  ): Promise<StoreScopedOrderResource | null> {
+    const order = await this.prisma.order.findFirst({
+      where: {
+        id: orderId,
+        storeId: authenticatedStoreId,
+      },
+      select: {
+        id: true,
+        storeId: true,
+        sessionId: true,
+        status: true,
+      },
+    });
+    return order
+      ? {
+          orderId: order.id,
+          storeId: order.storeId,
+          sessionId: order.sessionId,
+          status: order.status,
         }
       : null;
   }

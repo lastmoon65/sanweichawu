@@ -9,6 +9,7 @@ import {
   openDiningSession,
 } from './dining-sessions';
 import type { DiningSession } from './dining-sessions';
+import { formatDateTime } from './format-time';
 import { NETWORK_ERROR_MESSAGE, NetworkError, UnauthorizedSessionError } from './staff-auth';
 
 interface DiningSessionsPanelProps {
@@ -261,7 +262,9 @@ export function DiningSessionsPanel({ accessToken, onSessionExpired }: DiningSes
                       {session ? (
                         <>
                           <span className="session-status">已开台</span>
-                          <span className="table-time">开台时间：{session.openedAt}</span>
+                          <span className="table-time">
+                            开台时间：{formatDateTime(session.openedAt)}
+                          </span>
                         </>
                       ) : (
                         <span className="session-status">空闲</span>

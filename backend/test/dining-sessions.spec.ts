@@ -2,7 +2,7 @@ import 'reflect-metadata';
 
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import type { StaffRole, StaffStatus } from '@prisma/client';
+import type { OrderStatus, StaffRole, StaffStatus } from '@prisma/client';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { AppModule } from '../src/app.module.js';
@@ -64,12 +64,17 @@ interface SessionWhere {
   status?: 'OPEN' | 'CLOSED';
 }
 
+interface OrderRow {
+  sessionId: bigint;
+  status: OrderStatus;
+}
+
 class FakeSessionPrisma {
   staffRows: StaffRow[] = [];
   credentialRows: CredentialRow[] = [];
   tableRows: TableRow[] = [];
   sessionRows: SessionRow[] = [];
-  orderSessionIds: bigint[] = [];
+  orderRows: OrderRow[] = [];
   private nextStaffId = 1n;
   private nextTableId = 1n;
   private nextSessionId = 1n;
@@ -202,8 +207,17 @@ class FakeSessionPrisma {
   };
 
   readonly order = {
-    count: async (args: { where: { sessionId: bigint } }) =>
-      this.orderSessionIds.filter((sessionId) => sessionId === args.where.sessionId).length,
+    count: async (args: {
+      where: { sessionId: bigint; status?: OrderStatus | { notIn: readonly OrderStatus[] } };
+    }) =>
+      this.orderRows.filter((order) => {
+        const statusMatches =
+          args.where.status === undefined ||
+          (typeof args.where.status === 'string'
+            ? order.status === args.where.status
+            : !args.where.status.notIn.includes(order.status));
+        return order.sessionId === args.where.sessionId && statusMatches;
+      }).length,
   };
 
   private matches(session: SessionRow, where: SessionWhere): boolean {
@@ -220,7 +234,7 @@ class FakeSessionPrisma {
     this.credentialRows = [];
     this.tableRows = [];
     this.sessionRows = [];
-    this.orderSessionIds = [];
+    this.orderRows = [];
     this.nextStaffId = 1n;
     this.nextTableId = 1n;
     this.nextSessionId = 1n;
@@ -476,7 +490,7 @@ describe('dining session HTTP contract', () => {
     const opened = successData<{ id: string }>(
       await api('POST', `/dining-tables/${table.id}/sessions`, { token }),
     );
-    prisma.orderSessionIds.push(BigInt(opened.id));
+    prisma.orderRows.push({ sessionId: BigInt(opened.id), status: 'PENDING_ACCEPTANCE' });
 
     const response = await api('POST', `/dining-sessions/${opened.id}/close`, {
       token,
@@ -488,7 +502,35 @@ describe('dining session HTTP contract', () => {
     expect(response.body).toMatchObject({
       error: { details: { orderCount: 1 } },
     });
+    expect((response.body as ApiErrorBody).error.details).toMatchObject({
+      reason: 'SESSION_HAS_ORDERS',
+    });
     expect(prisma.sessionRows[0]).toMatchObject({ status: 'OPEN', version: 1 });
+  });
+
+  it('closes a session when its orders are all completed or cancelled', async () => {
+    const { token } = await addActor();
+    const table = prisma.addTable(10n, '一号桌', 'A01');
+    const opened = successData<{ id: string }>(
+      await api('POST', `/dining-tables/${table.id}/sessions`, { token }),
+    );
+    prisma.orderRows.push(
+      { sessionId: BigInt(opened.id), status: 'COMPLETED' },
+      { sessionId: BigInt(opened.id), status: 'CANCELLED' },
+    );
+
+    const response = await api('POST', `/dining-sessions/${opened.id}/close`, {
+      token,
+      body: { version: 1 },
+    });
+
+    expect(response.status).toBe(200);
+    expect(successData<Record<string, unknown>>(response)).toMatchObject({
+      id: opened.id,
+      status: 'CLOSED',
+      version: 2,
+    });
+    expect(prisma.sessionRows[0]).toMatchObject({ status: 'CLOSED', version: 2 });
   });
 
   it('lists this store sessions and validates the status filter', async () => {

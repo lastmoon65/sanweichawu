@@ -9,6 +9,7 @@ import {
   updateDiningTable,
 } from './dining-tables';
 import type { DiningTable } from './dining-tables';
+import { formatDateTime } from './format-time';
 import { NETWORK_ERROR_MESSAGE, NetworkError, UnauthorizedSessionError } from './staff-auth';
 
 interface DiningTablesPanelProps {
@@ -236,7 +237,7 @@ export function DiningTablesPanel({ accessToken, onSessionExpired }: DiningTable
                   <td>
                     <span className="table-code">{table.code}</span>
                   </td>
-                  <td className="table-time">{table.updatedAt}</td>
+                  <td className="table-time">{formatDateTime(table.updatedAt)}</td>
                   <td>
                     <div className="row-actions">
                       <button

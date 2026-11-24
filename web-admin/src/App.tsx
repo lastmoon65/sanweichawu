@@ -18,9 +18,10 @@ import type { Staff, StaffRole } from './staff-auth';
 import { DiningSessionsPanel } from './DiningSessionsPanel';
 import { DiningTablesPanel } from './DiningTablesPanel';
 import { ProductMenuPanel } from './ProductMenuPanel';
+import { OrdersPanel } from './OrdersPanel';
 
 type AuthStatus = 'checking' | 'signed-out' | 'signed-in';
-type WorkspaceView = 'operations' | 'sessions';
+type WorkspaceView = 'operations' | 'sessions' | 'orders';
 
 interface FieldErrors {
   username?: string;
@@ -228,10 +229,23 @@ export function App() {
           >
             桌台
           </button>
+          <button
+            className="secondary-button"
+            type="button"
+            aria-pressed={view === 'orders'}
+            onClick={() => setView('orders')}
+          >
+            订单
+          </button>
         </nav>
 
         {view === 'sessions' ? (
           <DiningSessionsPanel
+            accessToken={sessionStorage.getItem(STAFF_SESSION_TOKEN_KEY) ?? ''}
+            onSessionExpired={handleSessionExpired}
+          />
+        ) : view === 'orders' ? (
+          <OrdersPanel
             accessToken={sessionStorage.getItem(STAFF_SESSION_TOKEN_KEY) ?? ''}
             onSessionExpired={handleSessionExpired}
           />
