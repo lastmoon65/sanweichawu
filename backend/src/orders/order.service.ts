@@ -339,6 +339,26 @@ export class OrderService {
     return { items: orders.map(serializeOrder) };
   }
 
+  async listByCustomer(
+    customerUserIdValue: bigint | string,
+    sessionIdValue: string | string[] | undefined,
+  ): Promise<OrderListResponse> {
+    const customerUserId = parseId(customerUserIdValue);
+    if (customerUserId === null) {
+      throw insufficientPermissions();
+    }
+    const sessionId = this.parseSessionFilter(sessionIdValue);
+    const orders = await this.prisma.order.findMany({
+      where: {
+        customerUserId,
+        ...(sessionId === undefined ? {} : { sessionId }),
+      },
+      include: ORDER_INCLUDE,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    });
+    return { items: orders.map(serializeOrder) };
+  }
+
   async get(storeId: bigint, orderIdValue: string): Promise<OrderResponse> {
     const orderId = parsePathId(orderIdValue);
     const order = await this.prisma.order.findFirst({

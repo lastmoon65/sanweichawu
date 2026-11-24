@@ -15,10 +15,20 @@ interface StaffTokenInput {
   storeId: bigint;
 }
 
+interface CustomerTokenInput {
+  customerUserId: bigint;
+}
+
 export interface VerifiedStaffToken {
   staffId: bigint;
   role: StaffRole;
   storeId: bigint;
+  issuedAt: number;
+  expiresAt: number;
+}
+
+export interface VerifiedCustomerToken {
+  customerUserId: bigint;
   issuedAt: number;
   expiresAt: number;
 }
@@ -36,6 +46,18 @@ interface JwtPayload {
   iat: number;
   exp: number;
 }
+
+interface CustomerJwtPayload {
+  sub: string;
+  customerUserId: string;
+  typ: 'customer';
+  aud: 'customer';
+  iat: number;
+  exp: number;
+}
+
+const CUSTOMER_TOKEN_AUDIENCE = 'customer';
+const CUSTOMER_SIGNING_CONTEXT = 'sanweichawu:customer-access-token:v1';
 
 function encodeJson(value: unknown): string {
   return Buffer.from(JSON.stringify(value), 'utf8').toString('base64url');
@@ -95,6 +117,22 @@ export class TokenService {
     return signJwt(payload as unknown as Record<string, unknown>, this.config.jwtAccessSecret);
   }
 
+  signCustomerAccessToken(input: CustomerTokenInput, now = Date.now()): string {
+    const issuedAt = Math.floor(now / 1000);
+    const payload: CustomerJwtPayload = {
+      sub: input.customerUserId.toString(),
+      customerUserId: input.customerUserId.toString(),
+      typ: CUSTOMER_TOKEN_AUDIENCE,
+      aud: CUSTOMER_TOKEN_AUDIENCE,
+      iat: issuedAt,
+      exp: issuedAt + this.config.jwtAccessTtlSeconds,
+    };
+    return signJwt(
+      payload as unknown as Record<string, unknown>,
+      this.deriveCustomerSigningSecret(),
+    );
+  }
+
   verifyAccessToken(token: string, now = Date.now()): VerifiedStaffToken {
     const parts = token.split('.');
     if (parts.length !== 3) {
@@ -133,6 +171,8 @@ export class TokenService {
     }
     if (
       !isRecord(payload) ||
+      payload.typ === CUSTOMER_TOKEN_AUDIENCE ||
+      payload.aud === CUSTOMER_TOKEN_AUDIENCE ||
       !isPositiveBigIntString(payload.staffId) ||
       !isPositiveBigIntString(payload.storeId) ||
       !isStaffRole(payload.role) ||
@@ -157,5 +197,75 @@ export class TokenService {
       issuedAt: payload.iat,
       expiresAt: payload.exp,
     };
+  }
+
+  verifyCustomerAccessToken(token: string, now = Date.now()): VerifiedCustomerToken {
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      throw new Error('Invalid access token');
+    }
+
+    const [encodedHeader, encodedPayload, encodedSignature] = parts as [string, string, string];
+    const signingInput = `${encodedHeader}.${encodedPayload}`;
+    const expectedSignature = createHmac('sha256', this.deriveCustomerSigningSecret())
+      .update(signingInput)
+      .digest();
+    let actualSignature: Buffer;
+    try {
+      actualSignature = Buffer.from(encodedSignature, 'base64url');
+    } catch {
+      throw new Error('Invalid access token');
+    }
+    if (
+      actualSignature.length !== expectedSignature.length ||
+      !timingSafeEqual(actualSignature, expectedSignature)
+    ) {
+      throw new Error('Invalid access token');
+    }
+
+    let header: unknown;
+    let payload: unknown;
+    try {
+      header = decodeJson(encodedHeader);
+      payload = decodeJson(encodedPayload);
+    } catch {
+      throw new Error('Invalid access token');
+    }
+
+    if (!isRecord(header) || header.alg !== 'HS256' || header.typ !== 'JWT') {
+      throw new Error('Invalid access token');
+    }
+    if (
+      !isRecord(payload) ||
+      payload.typ !== CUSTOMER_TOKEN_AUDIENCE ||
+      payload.aud !== CUSTOMER_TOKEN_AUDIENCE ||
+      !isPositiveBigIntString(payload.sub) ||
+      !isPositiveBigIntString(payload.customerUserId) ||
+      payload.sub !== payload.customerUserId ||
+      typeof payload.iat !== 'number' ||
+      typeof payload.exp !== 'number'
+    ) {
+      throw new Error('Invalid access token');
+    }
+
+    const nowInSeconds = Math.floor(now / 1000);
+    if (!Number.isSafeInteger(payload.iat) || !Number.isSafeInteger(payload.exp)) {
+      throw new Error('Invalid access token');
+    }
+    if (payload.exp <= nowInSeconds || payload.iat > nowInSeconds + 60) {
+      throw new Error('Invalid access token');
+    }
+
+    return {
+      customerUserId: parseBoundedId(payload.customerUserId),
+      issuedAt: payload.iat,
+      expiresAt: payload.exp,
+    };
+  }
+
+  private deriveCustomerSigningSecret(): string {
+    return createHmac('sha256', this.config.jwtAccessSecret)
+      .update(CUSTOMER_SIGNING_CONTEXT)
+      .digest('base64url');
   }
 }

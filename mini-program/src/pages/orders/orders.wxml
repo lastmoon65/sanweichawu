@@ -1,0 +1,42 @@
+<view class="page-shell orders-shell">
+  <view class="eyebrow">MY ORDERS</view>
+  <view class="page-title">我的订单</view>
+
+  <view wx:if="{{error}}" class="error-banner">{{error}}</view>
+  <view wx:if="{{loading}}" class="hint">正在加载订单…</view>
+  <view wx:if="{{!loading && orders.length === 0}}" class="empty-state">暂无订单，去菜单点一杯吧。</view>
+
+  <view wx:for="{{orders}}" wx:key="id" class="order-card">
+    <view class="order-head">
+      <view>
+        <view class="order-no">{{item.orderNo}}</view>
+        <view class="order-time">{{item.createdAtDisplay}}</view>
+      </view>
+      <text class="status-badge status-{{item.status}}">{{item.statusText}}</text>
+    </view>
+
+    <view class="order-items">
+      <view wx:for="{{item.items}}" wx:for-item="line" wx:key="id" class="order-line">
+        <view>
+          <view class="order-line-name">{{line.name}}</view>
+          <view wx:if="{{line.remark}}" class="order-line-remark">备注：{{line.remark}}</view>
+        </view>
+        <view class="order-line-meta">×{{line.quantity}}　¥{{line.lineSubtotalDisplay}}</view>
+      </view>
+    </view>
+
+    <view class="order-foot">
+      <view class="order-total">合计 ¥{{item.totalDisplay}}</view>
+      <button
+        wx:if="{{item.canCancel}}"
+        class="cancel-button"
+        size="mini"
+        data-order-id="{{item.id}}"
+        data-version="{{item.version}}"
+        bindtap="confirmCancel"
+      >取消订单</button>
+    </view>
+  </view>
+
+  <button class="secondary-button back-button" bindtap="goMenu">返回菜单</button>
+</view>

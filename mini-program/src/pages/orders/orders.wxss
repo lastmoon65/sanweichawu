@@ -1,0 +1,103 @@
+.orders-shell {
+  padding: 56rpx 32rpx 80rpx;
+}
+
+.page-title {
+  margin-top: 12rpx;
+  font-family: 'Songti SC', serif;
+  font-size: 64rpx;
+  letter-spacing: 6rpx;
+}
+
+.order-card {
+  margin-top: 28rpx;
+  padding: 30rpx;
+  border: 1rpx solid rgba(36, 76, 58, 0.12);
+  border-radius: 28rpx;
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.order-head,
+.order-foot,
+.order-line {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.order-no {
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.order-time {
+  margin-top: 8rpx;
+  color: #7a847c;
+  font-size: 23rpx;
+}
+
+.status-badge {
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: #eef2ec;
+  color: #315c46;
+  font-size: 23rpx;
+}
+
+.status-CANCELLED {
+  background: #f1ebe6;
+  color: #8a5b34;
+}
+
+.status-COMPLETED {
+  background: #e5eee7;
+  color: #244c3a;
+}
+
+.order-items {
+  margin-top: 24rpx;
+  border-top: 1rpx solid rgba(36, 76, 58, 0.08);
+}
+
+.order-line {
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid rgba(36, 76, 58, 0.08);
+}
+
+.order-line-name {
+  font-size: 26rpx;
+}
+
+.order-line-remark {
+  margin-top: 6rpx;
+  color: #7a847c;
+  font-size: 22rpx;
+}
+
+.order-line-meta {
+  color: #637066;
+  font-size: 24rpx;
+  white-space: nowrap;
+}
+
+.order-foot {
+  align-items: center;
+  padding-top: 22rpx;
+}
+
+.order-total {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.cancel-button {
+  margin: 0;
+  border-radius: 999rpx;
+  background: #f4ece7;
+  color: #8a4d34;
+  font-size: 23rpx;
+}
+
+.back-button {
+  margin-top: 44rpx;
+}

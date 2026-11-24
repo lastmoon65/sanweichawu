@@ -1,36 +1,61 @@
-.page-shell {
-  min-height: 100vh;
-  padding: 96rpx 48rpx;
-  box-sizing: border-box;
+.home-shell {
+  padding-top: 120rpx;
 }
 
-.eyebrow {
-  color: #56705f;
-  font-size: 22rpx;
-  font-weight: 600;
-  letter-spacing: 6rpx;
+.subtitle {
+  margin-top: 18rpx;
+  color: #637066;
+  font-size: 28rpx;
+  letter-spacing: 2rpx;
 }
 
-.title {
-  margin-top: 24rpx;
-  font-family: 'Songti SC', serif;
-  font-size: 96rpx;
-  letter-spacing: 12rpx;
-}
-
-.status-card {
-  margin-top: 96rpx;
-  padding: 40rpx;
-  border: 1rpx solid rgba(36, 76, 58, 0.16);
-  border-radius: 28rpx;
-  background: rgba(255, 255, 255, 0.72);
-  font-size: 30rpx;
-  font-weight: 600;
-}
-
-.description {
-  margin-top: 24rpx;
+.hint {
+  margin-top: 56rpx;
   color: #637066;
   font-size: 26rpx;
-  line-height: 1.8;
+}
+
+.primary-button,
+.secondary-button {
+  margin-top: 40rpx;
+  border-radius: 999rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.primary-button {
+  background: #244c3a;
+  color: #ffffff;
+}
+
+.secondary-button {
+  margin-top: 24rpx;
+  border: 1rpx solid rgba(36, 76, 58, 0.28);
+  background: rgba(255, 255, 255, 0.74);
+  color: #244c3a;
+}
+
+.divider {
+  margin: 64rpx 0 28rpx;
+  color: #7a847c;
+  font-size: 24rpx;
+  text-align: center;
+}
+
+.code-input {
+  height: 96rpx;
+  padding: 0 32rpx;
+  border: 1rpx solid rgba(36, 76, 58, 0.18);
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.82);
+  font-size: 32rpx;
+  text-align: center;
+}
+
+.support-note {
+  margin-top: 120rpx;
+  color: #7a847c;
+  font-size: 24rpx;
+  line-height: 1.7;
+  text-align: center;
 }

@@ -1,5 +1,5 @@
 {
-  "pages": ["pages/index/index"],
+  "pages": ["pages/index/index", "pages/menu/menu", "pages/orders/orders"],
   "window": {
     "navigationBarTitleText": "三味茶屋",
     "navigationBarBackgroundColor": "#244c3a",

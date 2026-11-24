@@ -9,5 +9,6 @@ import { OrderService } from './order.service.js';
   imports: [AuthModule, PrismaModule],
   controllers: [OrderController],
   providers: [OrderService],
+  exports: [OrderService],
 })
 export class OrdersModule {}

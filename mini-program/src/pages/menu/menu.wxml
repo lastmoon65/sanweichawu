@@ -1,0 +1,68 @@
+<view class="page-shell menu-shell">
+  <view class="menu-header">
+    <view>
+      <view class="eyebrow">TABLE {{tableCode || '—'}}</view>
+      <view class="page-title">今日茶单</view>
+    </view>
+    <text class="orders-link" bindtap="goOrders">我的订单</text>
+  </view>
+
+  <view wx:if="{{error}}" class="error-banner">{{error}}</view>
+  <view wx:if="{{loading}}" class="hint">正在加载菜单…</view>
+
+  <scroll-view wx:if="{{categories.length > 0}}" class="category-bar" scroll-x enhanced show-scrollbar="{{false}}">
+    <view
+      wx:for="{{categories}}"
+      wx:key="id"
+      class="category-chip {{index === activeCategoryIndex ? 'category-chip-active' : ''}}"
+      data-index="{{index}}"
+      bindtap="selectCategory"
+    >
+      {{item.name}}
+    </view>
+  </scroll-view>
+
+  <view wx:if="{{!loading && categories.length === 0}}" class="empty-state">当前暂无可点商品。</view>
+
+  <view class="product-list">
+    <view wx:for="{{activeProducts}}" wx:key="id" class="product-card">
+      <view class="product-name">{{item.name}}</view>
+      <view wx:if="{{item.description}}" class="product-description">{{item.description}}</view>
+      <view class="variant-list">
+        <view wx:for="{{item.variants}}" wx:for-item="variant" wx:key="id" class="variant-row">
+          <view>
+            <view class="variant-name">{{variant.name}}</view>
+            <view class="variant-price">¥{{variant.priceDisplay}}</view>
+          </view>
+          <button
+            class="add-button"
+            size="mini"
+            data-variant-id="{{variant.id}}"
+            data-variant-name="{{variant.name}}"
+            data-product-name="{{item.name}}"
+            data-price-fen="{{variant.priceFen}}"
+            bindtap="addVariant"
+          >加入</button>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<view wx:if="{{cart.length > 0}}" class="cart-panel">
+  <view class="cart-title">已选 {{cartCount}} 件</view>
+  <view wx:for="{{cart}}" wx:key="variantId" class="cart-line">
+    <view class="cart-line-info">
+      <view class="cart-line-name">{{item.productName}} · {{item.variantName}}</view>
+      <view class="cart-line-price">¥{{item.lineTotalDisplay}}</view>
+    </view>
+    <view class="quantity-controls">
+      <button class="quantity-button" data-variant-id="{{item.variantId}}" data-delta="-1" bindtap="changeQuantity">−</button>
+      <text class="quantity-value">{{item.quantity}}</text>
+      <button class="quantity-button" data-variant-id="{{item.variantId}}" data-delta="1" bindtap="changeQuantity">＋</button>
+    </view>
+  </view>
+  <button class="primary-button submit-button" bindtap="submitOrder" loading="{{submitting}}" disabled="{{submitting}}">
+    提交订单 · ¥{{totalDisplay}}
+  </button>
+</view>

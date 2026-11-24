@@ -18,10 +18,17 @@ export interface AuthenticatedStaff {
   readonly username: string;
 }
 
+export interface AuthenticatedCustomer {
+  readonly customerUserId: bigint;
+  readonly issuedAt: number;
+  readonly expiresAt: number;
+}
+
 export interface AuthenticatedRequest {
   headers: Record<string, string | string[] | undefined>;
   params?: Record<string, string | string[] | undefined>;
   staffAuth?: AuthenticatedStaff;
+  customerAuth?: AuthenticatedCustomer;
   storeResource?: StoreScopedStaffResource;
   storeTableResource?: StoreScopedDiningTableResource;
   storeSessionResource?: StoreScopedDiningSessionResource;
